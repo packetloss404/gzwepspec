@@ -1,0 +1,272 @@
+.weapon-preview {
+  --preview-accent: #c8f36c;
+  --preview-shell: rgba(11, 16, 15, 0.82);
+  position: relative;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  color: #edf3df;
+}
+
+.weapon-preview__stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(220, 238, 180, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(220, 238, 180, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(220, 238, 180, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 50% 62%, rgba(176, 207, 119, 0.16), transparent 46%),
+    linear-gradient(145deg, rgba(20, 29, 25, 0.96), rgba(7, 10, 11, 0.94));
+  background-size: 28px 28px, 28px 28px, auto, auto;
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.38);
+  isolation: isolate;
+}
+
+.weapon-preview__stage::after {
+  position: absolute;
+  right: 8%;
+  bottom: 16%;
+  left: 8%;
+  z-index: 0;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  filter: blur(10px);
+  content: "";
+}
+
+.weapon-preview__base {
+  position: absolute;
+  inset: 18% 6% 18%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  transform: translateY(var(--weapon-offset-y)) scale(var(--weapon-scale));
+  transform-origin: center;
+}
+
+.weapon-preview__base img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.38));
+  opacity: 0.9;
+}
+
+.weapon-preview__fallback-weapon {
+  position: relative;
+  width: 78%;
+  height: 34%;
+  filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.4));
+}
+
+.weapon-preview__fallback-weapon::before,
+.weapon-preview__fallback-weapon::after {
+  position: absolute;
+  content: "";
+}
+
+.weapon-preview__fallback-weapon::before {
+  inset: 24% 25% 28% 25%;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #3c4940, #202724);
+  box-shadow: 18px -10px 0 -5px #1d2422, 46px 0 0 -7px #323b35, -42px 6px 0 -6px #262d29;
+}
+
+.weapon-preview__fallback-weapon::after {
+  top: 40%;
+  right: 4%;
+  width: 34%;
+  height: 9%;
+  border-radius: 999px;
+  background: #596257;
+  box-shadow: -92px 10px 0 8px #262c28, -132px 14px 0 15px #232824;
+}
+
+.weapon-preview__layer,
+.weapon-preview__anchor {
+  position: absolute;
+  left: var(--anchor-x);
+  top: var(--anchor-y);
+  width: var(--anchor-width);
+  height: var(--anchor-height);
+  transform: translate(-50%, -50%) rotate(var(--anchor-rotation));
+  transform-origin: center;
+}
+
+.weapon-preview__layer {
+  z-index: var(--anchor-layer);
+  pointer-events: none;
+}
+
+.weapon-preview__part-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 8px 8px rgba(0, 0, 0, 0.42))
+    drop-shadow(0 0 8px rgba(223, 245, 174, 0.08));
+}
+
+.weapon-preview__shape {
+  position: absolute;
+  inset: 14%;
+  border: 1px solid color-mix(in srgb, var(--part-color), #ffffff 14%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--part-color), #ffffff 14%), color-mix(in srgb, var(--part-color), #000000 18%));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 9px rgba(0, 0, 0, 0.3);
+}
+
+.weapon-preview__shape--box,
+.weapon-preview__shape--rail {
+  border-radius: 3px;
+}
+
+.weapon-preview__shape--barrel,
+.weapon-preview__shape--tube {
+  inset-block: 33%;
+  border-radius: 999px;
+}
+
+.weapon-preview__shape--tube::after,
+.weapon-preview__shape--optic::before {
+  position: absolute;
+  content: "";
+}
+
+.weapon-preview__shape--tube::after {
+  top: 50%;
+  right: 4px;
+  width: 18%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(0, 0, 0, 0.46);
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.weapon-preview__shape--grip,
+.weapon-preview__shape--magazine {
+  inset-inline: 22%;
+  border-radius: 3px 3px 6px 6px;
+  clip-path: polygon(17% 0, 100% 0, 83% 100%, 0 100%);
+}
+
+.weapon-preview__shape--stock {
+  border-radius: 4px 7px 7px 4px;
+  clip-path: polygon(0 36%, 60% 18%, 100% 30%, 100% 78%, 56% 84%, 0 66%);
+}
+
+.weapon-preview__shape--optic {
+  inset-block: 22%;
+  border-radius: 999px;
+}
+
+.weapon-preview__shape--optic::before {
+  left: 37%;
+  bottom: -32%;
+  width: 26%;
+  height: 34%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--part-color), #000000 28%);
+}
+
+.weapon-preview__shape--rail {
+  inset-block: 34%;
+}
+
+.weapon-preview__shape--rail::before {
+  position: absolute;
+  inset: 22% 8%;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 4px, transparent 4px 8px);
+  content: "";
+}
+
+.weapon-preview__anchor {
+  z-index: calc(var(--anchor-layer) + 12);
+  border: 1px solid rgba(230, 244, 188, 0.18);
+  border-radius: 6px;
+  background: rgba(199, 243, 108, 0.03);
+  opacity: 0;
+  transition: opacity 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.weapon-preview__anchor.is-visible,
+.weapon-preview__stage:hover .weapon-preview__anchor {
+  opacity: 1;
+}
+
+.weapon-preview__anchor.is-active {
+  border-color: color-mix(in srgb, var(--preview-accent), #ffffff 15%);
+  background: rgba(199, 243, 108, 0.12);
+  box-shadow: 0 0 0 1px rgba(199, 243, 108, 0.12), 0 0 18px rgba(199, 243, 108, 0.24);
+}
+
+.weapon-preview__anchor.is-installed {
+  border-style: solid;
+}
+
+.weapon-preview__anchor:not(.is-installed) {
+  border-style: dashed;
+}
+
+.weapon-preview__anchor-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(8, 13, 12, 0.9);
+  color: #dfeec0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+  transform: translateX(-50%) rotate(calc(var(--anchor-rotation) * -1));
+  white-space: nowrap;
+}
+
+.weapon-preview__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(220, 238, 180, 0.12);
+  border-radius: 8px;
+  background: var(--preview-shell);
+}
+
+.weapon-preview__meta span,
+.weapon-preview__meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weapon-preview__meta span {
+  color: rgba(237, 243, 223, 0.68);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.weapon-preview__meta strong {
+  color: #f1f7e7;
+  font-size: 13px;
+}
+
+@media (max-width: 680px) {
+  .weapon-preview__stage {
+    min-height: 180px;
+  }
+
+  .weapon-preview__anchor-label {
+    display: none;
+  }
+}
