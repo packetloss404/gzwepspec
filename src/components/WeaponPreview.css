@@ -194,6 +194,7 @@
 }
 
 .weapon-preview__anchor.is-visible,
+.weapon-preview__anchor:focus-visible,
 .weapon-preview__stage:hover .weapon-preview__anchor {
   opacity: 1;
 }

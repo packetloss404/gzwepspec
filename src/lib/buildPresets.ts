@@ -1,4 +1,4 @@
-import { parts, slotOrder, type Part, type Slot, type StatKey, type WeaponPlatform } from "../data/armory";
+import { slotOrder, type Part, type Slot, type StatKey, type WeaponPlatform } from "../data/armory";
 import {
   checkAvailability,
   compatibleParts,
@@ -224,8 +224,5 @@ function isSelections(value: unknown): value is BuildSelections {
     return false;
   }
 
-  return Object.entries(value).every(([slot, id]) => {
-    const part = parts.find((candidate) => candidate.id === id);
-    return typeof id === "string" && part !== undefined && part.slot === slot;
-  });
+  return Object.values(value).every((id) => typeof id === "string");
 }

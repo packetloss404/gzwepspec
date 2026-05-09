@@ -37,7 +37,7 @@ export function checkAvailability(platform: WeaponPlatform, part: Part, selectio
     reasons.push(`${platform.name} has no ${slotLabels[part.slot]} slot.`);
   }
 
-  if (part.platformTags?.length && !part.platformTags.some((tag) => tags.has(tag))) {
+  if (part.platformTags?.length && !part.platformTags.some((tag) => platform.tags.includes(tag))) {
     reasons.push(`Fits ${formatTagList(part.platformTags)} platforms only.`);
   }
 
@@ -50,6 +50,13 @@ export function checkAvailability(platform: WeaponPlatform, part: Part, selectio
   for (const conflict of part.conflicts ?? []) {
     if (tags.has(conflict) || selectedParts.some((selected) => selected.id === conflict || selected.tags.includes(conflict))) {
       reasons.push(`Conflicts with ${formatConflict(conflict, selectedParts)}.`);
+    }
+  }
+
+  for (const selected of selectedParts) {
+    const reverseConflict = selected.conflicts?.find((conflict) => partMatchesConflict(part, conflict));
+    if (reverseConflict) {
+      reasons.push(`Conflicts with ${selected.name}.`);
     }
   }
 
@@ -66,21 +73,27 @@ export function compatibleParts(platform: WeaponPlatform, slot: Slot, selections
 }
 
 export function sanitizeSelections(platform: WeaponPlatform, selections: BuildSelections): BuildSelections {
-  const next = { ...selections };
+  const next: Record<string, string> = Object.fromEntries(
+    Object.entries(selections).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  );
   let changed = true;
 
   while (changed) {
     changed = false;
-    for (const [slot, id] of Object.entries(next) as [Slot, string][]) {
+    const seenPartIds = new Set<string>();
+    for (const [slot, id] of Object.entries(next)) {
       const part = parts.find((candidate) => candidate.id === id);
-      if (!part || !checkAvailability(platform, part, next).available) {
+      if (!isSlot(slot) || !part || part.slot !== slot || seenPartIds.has(id) || !checkAvailability(platform, part, next).available) {
         delete next[slot];
         changed = true;
+        continue;
       }
+
+      seenPartIds.add(id);
     }
   }
 
-  return next;
+  return next as BuildSelections;
 }
 
 export function totalStats(platform: WeaponPlatform, selections: BuildSelections): Stats {
@@ -88,11 +101,13 @@ export function totalStats(platform: WeaponPlatform, selections: BuildSelections
 
   for (const part of getSelectedParts(selections)) {
     for (const [key, value] of Object.entries(part.stats) as [StatKey, number][]) {
-      totals[key] = roundStat((totals[key] ?? emptyStats[key]) + value, key);
+      totals[key] = (totals[key] ?? emptyStats[key]) + value;
     }
   }
 
-  return totals;
+  return Object.fromEntries(
+    (Object.keys(emptyStats) as StatKey[]).map((key) => [key, roundStat(totals[key] ?? emptyStats[key], key)]),
+  ) as Stats;
 }
 
 export function statDelta(part: Part, key: StatKey) {
@@ -151,6 +166,14 @@ function formatConflict(conflict: string, selectedParts: Part[]) {
   const selected = selectedParts.find((part) => part.id === conflict || part.tags.includes(conflict));
 
   return selected ? selected.name : formatTag(conflict);
+}
+
+function partMatchesConflict(part: Part, conflict: string) {
+  return part.id === conflict || part.tags.includes(conflict) || Boolean(part.provides?.includes(conflict));
+}
+
+function isSlot(value: string): value is Slot {
+  return Object.prototype.hasOwnProperty.call(slotLabels, value);
 }
 
 const tagNames: Record<string, string> = {

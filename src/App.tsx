@@ -13,17 +13,17 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import packageJson from "../package.json";
 import { AssetImage } from "./components/AssetImage";
 import { BuildSummary, type PriceCatalog } from "./components/BuildSummary";
 import { PartInspector } from "./components/PartInspector";
+import { SavedBuildsPanel } from "./components/SavedBuildsPanel";
 import WeaponPreview from "./components/WeaponPreview";
 import {
   platforms,
   parts,
   slotLabels,
-  slotOrder,
   statDirection,
   statLabels,
   type Part,
@@ -36,44 +36,66 @@ import {
   checkAvailability,
   compatibleParts,
   formatTag,
-  getSelectedParts,
-  getTagSet,
-  sanitizeSelections,
-  starterSelections,
   statDelta,
-  totalStats,
-  type BuildSelections,
 } from "./lib/build";
-import { createShareUrl, readBuildShareFromUrl } from "./lib/share";
+import {
+  applyBuildPreset,
+  createBuildPreset,
+  loadBuildPresets,
+  removeBuildPreset,
+  saveBuildPreset,
+  type BuildPreset,
+  type BuildPresetGoal,
+} from "./lib/buildPresets";
+import { useBuildState } from "./hooks/useBuildState";
+import { decodeBuildShare, encodeBuildShare } from "./lib/share";
 
 const statKeys: StatKey[] = ["accuracy", "recoil", "ads", "ergonomics", "weight", "velocity"];
+const loyaltyLevels = ["1", "2", "3"] as const;
 
-const intentWeights: Record<string, Partial<Record<StatKey, number>>> = {
-  factory: { ergonomics: 0.4, recoil: -0.5, accuracy: 0.4, weight: -0.3, ads: -0.3 },
-  assault: { ergonomics: 1.1, recoil: -1.25, accuracy: 1, weight: -0.45, ads: -0.75, velocity: 0.25 },
-  recce: { ergonomics: 0.45, recoil: -1, accuracy: 1.8, weight: -0.35, ads: -0.35, velocity: 0.65 },
-  suppressed: { ergonomics: 0.7, recoil: -1.4, accuracy: 1.1, weight: -0.35, ads: -0.4 },
-};
+type SortMode = "relevance" | "name" | "vendor" | "price-asc" | "price-desc" | "best-stat";
 
 function App() {
-  const [platformId, setPlatformId] = useState(platforms[0].id);
-  const platform = platforms.find((item) => item.id === platformId) ?? platforms[0];
-  const [selections, setSelections] = useState<BuildSelections>(() => starterSelections(platform));
-  const [activeSlot, setActiveSlot] = useState<Slot>("optic");
+  const {
+    platform,
+    selections,
+    activeSlot,
+    inspectedPart,
+    selectedParts,
+    stats,
+    availableSlots,
+    tagSet,
+    shareStatus,
+    shareWarnings,
+    shareCode: currentEncodedShare,
+    selectPlatform: selectBuildPlatform,
+    focusSlot,
+    inspectPart,
+    choosePart: chooseBuildPart,
+    clearSlot: clearBuildSlot,
+    applyIntent: applyPresetIntent,
+    loadBuild,
+    setShareStatus,
+    copyShareLink: copyBuildShareLink,
+  } = useBuildState();
   const [query, setQuery] = useState("");
   const [showSquadModal, setShowSquadModal] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [inspectedPartId, setInspectedPartId] = useState<string | null>(null);
-  const [shareStatus, setShareStatus] = useState("");
-  const selectedParts = useMemo(() => getSelectedParts(selections), [selections]);
-  const inspectedPart = useMemo(() => {
-    if (inspectedPartId) {
-      return parts.find((part) => part.id === inspectedPartId) ?? null;
-    }
-
-    return parts.find((part) => part.id === selections[activeSlot]) ?? null;
-  }, [activeSlot, inspectedPartId, selections]);
-  const stats = useMemo(() => totalStats(platform, selections), [platform, selections]);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareCode, setShareCode] = useState(currentEncodedShare);
+  const [importCode, setImportCode] = useState("");
+  const [savedBuilds, setSavedBuilds] = useState<BuildPreset[]>(() =>
+    typeof window === "undefined" ? [] : loadBuildPresets(window.localStorage),
+  );
+  const [buildWarnings, setBuildWarnings] = useState<string[]>(shareWarnings);
+  const [currentSlotOnly, setCurrentSlotOnly] = useState(true);
+  const [compatibleOnly, setCompatibleOnly] = useState(false);
+  const [hideLocked, setHideLocked] = useState(false);
+  const [vendorFilter, setVendorFilter] = useState("all");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [sortMode, setSortMode] = useState<SortMode>("relevance");
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
   const priceCatalog = useMemo<PriceCatalog>(() => {
     const entries = [
       ...platforms.map((item) => [item.id, item.price?.amount] as const),
@@ -82,11 +104,11 @@ function App() {
 
     return Object.fromEntries(entries);
   }, []);
-  const availableSlots = useMemo(
-    () => slotOrder.filter((slot) => platform.requiredSlots.includes(slot) || platform.optionalSlots.includes(slot)),
-    [platform],
+  const shareIsStale = shareCode !== currentEncodedShare;
+  const vendorOptions = useMemo(
+    () => Array.from(new Set(parts.map((part) => vendorName(part.vendor)))).sort((a, b) => a.localeCompare(b)),
+    [],
   );
-  const tagSet = useMemo(() => Array.from(getTagSet(platform, selections)).sort(), [platform, selections]);
   const lockerParts = useMemo(() => {
     const rows = parts
       .filter((part) => availableSlots.includes(part.slot))
@@ -94,7 +116,27 @@ function App() {
     const normalized = query.trim().toLowerCase();
 
     return rows
-      .filter(({ part }) => {
+      .filter(({ part, availability }) => {
+        if (currentSlotOnly && part.slot !== activeSlot) {
+          return false;
+        }
+
+        if (compatibleOnly && !availability.available) {
+          return false;
+        }
+
+        if (hideLocked && isVendorLocked(part)) {
+          return false;
+        }
+
+        if (vendorFilter !== "all" && vendorName(part.vendor) !== vendorFilter) {
+          return false;
+        }
+
+        if (levelFilter !== "all" && String(loyaltyLevel(part) ?? "") !== levelFilter) {
+          return false;
+        }
+
         if (!normalized) {
           return true;
         }
@@ -102,6 +144,26 @@ function App() {
         return `${part.name} ${part.vendor} ${part.type} ${slotLabels[part.slot]} ${part.notes ?? ""}`.toLowerCase().includes(normalized);
       })
       .sort((a, b) => {
+        if (sortMode === "name") {
+          return a.part.name.localeCompare(b.part.name);
+        }
+
+        if (sortMode === "vendor") {
+          return a.part.vendor.localeCompare(b.part.vendor) || a.part.name.localeCompare(b.part.name);
+        }
+
+        if (sortMode === "price-asc") {
+          return (a.part.price?.amount ?? Number.MAX_SAFE_INTEGER) - (b.part.price?.amount ?? Number.MAX_SAFE_INTEGER);
+        }
+
+        if (sortMode === "price-desc") {
+          return (b.part.price?.amount ?? 0) - (a.part.price?.amount ?? 0);
+        }
+
+        if (sortMode === "best-stat") {
+          return partScore(b.part) - partScore(a.part) || a.part.name.localeCompare(b.part.name);
+        }
+
         const selectedA = selections[a.part.slot] === a.part.id ? 1 : 0;
         const selectedB = selections[b.part.slot] === b.part.id ? 1 : 0;
         const slotA = a.part.slot === activeSlot ? 1 : 0;
@@ -111,68 +173,104 @@ function App() {
 
         return selectedB - selectedA || slotB - slotA || availableB - availableA || a.part.slot.localeCompare(b.part.slot);
       });
-  }, [activeSlot, availableSlots, platform, query, selections]);
+  }, [activeSlot, availableSlots, compatibleOnly, currentSlotOnly, hideLocked, levelFilter, platform, query, selections, sortMode, vendorFilter]);
 
   useEffect(() => {
-    const nextPlatform = platforms.find((item) => item.id === platformId) ?? platforms[0];
-    setSelections(starterSelections(nextPlatform));
-    setActiveSlot(nextPlatform.optionalSlots.includes("optic") ? "optic" : nextPlatform.requiredSlots[0]);
-    setInspectedPartId(null);
-  }, [platformId]);
-
-  useEffect(() => {
-    const shared = readBuildShareFromUrl(window.location.href);
-    if (!shared.ok) {
+    if (!settingsOpen) {
       return;
     }
 
-    setPlatformId(shared.platform.id);
-    setSelections(shared.selections);
-    setActiveSlot(shared.platform.optionalSlots.includes("optic") ? "optic" : shared.platform.requiredSlots[0]);
-    setShareStatus(shared.warnings[0] ?? "Shared build loaded");
-  }, []);
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (settingsMenuRef.current?.contains(target) || settingsButtonRef.current?.contains(target)) {
+        return;
+      }
+
+      setSettingsOpen(false);
+    }
+
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      setSettingsOpen(false);
+      settingsButtonRef.current?.focus();
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [settingsOpen]);
 
   function choosePart(part: Part) {
-    setInspectedPartId(part.id);
-    const availability = checkAvailability(platform, part, selections);
-    if (!availability.available) {
+    if (isVendorLocked(part)) {
+      inspectPart(part);
       return;
     }
 
-    setSelections((current) => sanitizeSelections(platform, { ...current, [part.slot]: part.id }));
+    chooseBuildPart(part);
   }
 
   function clearSlot(slot: Slot) {
-    setSelections((current) => {
-      const next = { ...current };
-      delete next[slot];
-      return sanitizeSelections(platform, next);
-    });
-    setInspectedPartId(null);
+    clearBuildSlot(slot);
   }
 
-  function applyIntent(intent: keyof typeof intentWeights) {
-    let next = starterSelections(platform);
-    const weights = intentWeights[intent];
+  function selectPlatform(nextPlatformId: string) {
+    selectBuildPlatform(nextPlatformId);
+    setBuildWarnings([]);
+  }
 
-    for (const slot of availableSlots) {
-      const candidates = compatibleParts(platform, slot, next).filter(({ availability }) => availability.available);
-      if (!candidates.length) {
-        continue;
-      }
+  function saveCurrentBuild(name: string) {
+    const preset = createBuildPreset(platform, selections, { name });
+    setSavedBuilds(saveBuildPreset(window.localStorage, preset));
+    setBuildWarnings([]);
+    setShareStatus("Build saved", []);
+  }
 
-      const ranked = [...candidates].sort((a, b) => scorePart(b.part, weights, intent) - scorePart(a.part, weights, intent));
-      next = sanitizeSelections(platform, { ...next, [slot]: ranked[0].part.id });
+  function applySavedBuild(preset: BuildPreset) {
+    const targetPlatform = platforms.find((item) => item.id === preset.platformId) ?? platform;
+    const result = applyBuildPreset(targetPlatform, preset);
+    loadBuild(targetPlatform, result.preset.selections, result.warnings[0] ?? `${preset.name} applied`, result.warnings);
+    setShareCode(encodeBuildShare(targetPlatform, result.preset.selections));
+    setBuildWarnings(result.warnings);
+  }
+
+  function deleteSavedBuild(presetId: string) {
+    setSavedBuilds(removeBuildPreset(window.localStorage, presetId));
+    setBuildWarnings([]);
+    setShareStatus("Saved build deleted", []);
+  }
+
+  function importSharedBuild() {
+    const decoded = decodeBuildShare(importCode);
+    if (!decoded.ok) {
+      setBuildWarnings([decoded.error]);
+      setShareStatus(decoded.error, [decoded.error]);
+      return;
     }
 
-    setSelections(next);
-    setInspectedPartId(null);
+    loadBuild(decoded.platform, decoded.selections, decoded.warnings[0] ?? "Shared build imported", decoded.warnings);
+    setShareCode(encodeBuildShare(decoded.platform, decoded.selections));
+    setBuildWarnings(decoded.warnings);
+    setImportCode("");
+  }
+
+  function applyIntent(intent: BuildPresetGoal) {
+    applyPresetIntent(intent);
+    setBuildWarnings([]);
   }
 
   async function copyShareLink() {
-    const url = createShareUrl(window.location.href, platform, selections);
-    await navigator.clipboard.writeText(url);
-    setShareStatus("Build link copied");
+    const copiedShareCode = await copyBuildShareLink();
+    setShareCode(copiedShareCode);
+    setShareCopied(true);
+    setBuildWarnings([]);
   }
 
   return (
@@ -200,10 +298,13 @@ function App() {
           </button>
           <div className="settings-wrap">
             <button
+              ref={settingsButtonRef}
               className={settingsOpen ? "icon-button active" : "icon-button"}
               type="button"
               aria-label="Settings"
+              aria-controls="settings-menu"
               aria-expanded={settingsOpen}
+              aria-haspopup="menu"
               onClick={() => setSettingsOpen((open) => !open)}
             >
               <Settings size={15} />
@@ -213,8 +314,8 @@ function App() {
       </header>
 
       {settingsOpen && (
-        <div className="settings-menu" role="menu" aria-label="Settings">
-          <div className="settings-row">
+        <div id="settings-menu" className="settings-menu" ref={settingsMenuRef} role="menu" aria-label="Settings">
+          <div className="settings-row" role="presentation">
             <span>Version</span>
             <strong>v{packageJson.version}</strong>
           </div>
@@ -232,17 +333,15 @@ function App() {
       )}
 
       {showSquadModal && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setShowSquadModal(false)}>
-          <section className="coming-soon-modal" role="dialog" aria-modal="true" aria-labelledby="coming-soon-title" onClick={(event) => event.stopPropagation()}>
-            <button className="modal-close" type="button" aria-label="Close" onClick={() => setShowSquadModal(false)}>
-              <X size={16} />
-            </button>
-            <div className="coming-soon-icon">
-              <Construction size={34} />
-            </div>
-            <h2 id="coming-soon-title">Feature Coming Soon</h2>
-          </section>
-        </div>
+        <Dialog className="coming-soon-modal" labelledBy="coming-soon-title" onClose={() => setShowSquadModal(false)}>
+          <button className="modal-close" type="button" aria-label="Close" onClick={() => setShowSquadModal(false)}>
+            <X size={16} />
+          </button>
+          <div className="coming-soon-icon">
+            <Construction size={34} />
+          </div>
+          <h2 id="coming-soon-title">Feature Coming Soon</h2>
+        </Dialog>
       )}
 
       <section className="inventory-layout">
@@ -252,7 +351,6 @@ function App() {
               <h1>{platform.name}</h1>
               <span>{platform.caliber}</span>
             </div>
-            <button type="button" aria-label="Close"><X size={16} /></button>
           </div>
 
           <div className="weapon-scene">
@@ -260,10 +358,7 @@ function App() {
               platform={platform}
               selectedParts={selectedParts}
               activeSlot={activeSlot}
-              onSlotFocus={(slot) => {
-                setActiveSlot(slot);
-                setInspectedPartId(selections[slot] ?? null);
-              }}
+              onSlotFocus={focusSlot}
             />
           </div>
 
@@ -274,7 +369,7 @@ function App() {
 
           <div className="installed-assets" aria-label="Installed weapon parts">
             {selectedParts.slice(0, 8).map((part) => (
-              <button key={part.id} type="button" onClick={() => setActiveSlot(part.slot)}>
+              <button key={part.id} type="button" aria-label={`Focus installed ${slotLabels[part.slot]}: ${part.name}`} onClick={() => focusSlot(part.slot)}>
                 {partRenderAssetsByPartId[part.id] || partRenders[part.id] ? (
                   <AssetImage asset={partRenderAssetsByPartId[part.id]} src={partRenders[part.id]} alt="" fallback={<i style={{ background: part.color ?? "#39423c" }} />} />
                 ) : (
@@ -314,7 +409,9 @@ function App() {
                   key={slot}
                   className={activeSlot === slot ? "attachment-slot active" : "attachment-slot"}
                   type="button"
-                  onClick={() => setActiveSlot(slot)}
+                  aria-pressed={activeSlot === slot}
+                  aria-label={`${slotLabels[slot]} slot, ${selected ? selected.name : `${count} compatible parts`}`}
+                  onClick={() => focusSlot(slot)}
                 >
                   <span>{slotCode(slot)}</span>
                   <strong>{selected ? itemAbbrev(selected.name) : "+"}</strong>
@@ -346,7 +443,8 @@ function App() {
                 key={item.id}
                 className={item.id === platform.id ? "weapon-tile active" : "weapon-tile"}
                 type="button"
-                onClick={() => setPlatformId(item.id)}
+                aria-pressed={item.id === platform.id}
+                onClick={() => selectPlatform(item.id)}
               >
                 <Crosshair size={15} />
                 <span>{item.name}</span>
@@ -358,11 +456,11 @@ function App() {
           <div className="locker-tools">
             <label className="slot-select">
               <select
+                aria-label="Attachment slot"
                 value={activeSlot}
                 onChange={(event) => {
                   const slot = event.target.value as Slot;
-                  setActiveSlot(slot);
-                  setInspectedPartId(selections[slot] ?? null);
+                  focusSlot(slot);
                 }}
               >
                 {availableSlots.map((slot) => (
@@ -375,7 +473,70 @@ function App() {
             </label>
             <label className="stash-search">
               <Search size={15} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter stash" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter stash" aria-label="Filter stash" />
+            </label>
+          </div>
+
+          <div className="locker-filters" aria-label="Stash filters">
+            <button
+              className={currentSlotOnly ? "active" : ""}
+              type="button"
+              aria-label={`Show only ${slotLabels[activeSlot]} parts`}
+              aria-pressed={currentSlotOnly}
+              onClick={() => setCurrentSlotOnly((enabled) => !enabled)}
+            >
+              {slotCode(activeSlot)}
+            </button>
+            <button
+              className={compatibleOnly ? "active" : ""}
+              type="button"
+              aria-label="Show only compatible parts"
+              aria-pressed={compatibleOnly}
+              onClick={() => setCompatibleOnly((enabled) => !enabled)}
+            >
+              Fits
+            </button>
+            <button
+              className={hideLocked ? "active" : ""}
+              type="button"
+              aria-label="Hide loyalty locked parts"
+              aria-pressed={hideLocked}
+              onClick={() => setHideLocked((enabled) => !enabled)}
+            >
+              LL Open
+            </button>
+            <label>
+              <select aria-label="Filter vendor" value={vendorFilter} onChange={(event) => setVendorFilter(event.target.value)}>
+                <option value="all">All Vendors</option>
+                {vendorOptions.map((vendor) => (
+                  <option key={vendor} value={vendor}>
+                    {vendor}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} />
+            </label>
+            <label>
+              <select aria-label="Filter loyalty level" value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)}>
+                <option value="all">All LL</option>
+                {loyaltyLevels.map((level) => (
+                  <option key={level} value={level}>
+                    LL{level}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} />
+            </label>
+            <label>
+              <select aria-label="Sort stash" value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
+                <option value="relevance">Sort: Fit</option>
+                <option value="best-stat">Sort: Stat</option>
+                <option value="name">Sort: Name</option>
+                <option value="vendor">Sort: Vendor</option>
+                <option value="price-asc">Sort: $ Low</option>
+                <option value="price-desc">Sort: $ High</option>
+              </select>
+              <ChevronDown size={13} />
             </label>
           </div>
 
@@ -386,11 +547,9 @@ function App() {
                 part={part}
                 active={selections[part.slot] === part.id}
                 available={availability.available}
-                reason={availability.reasons[0]}
-                onClick={() => {
-                  setActiveSlot(part.slot);
-                  choosePart(part);
-                }}
+                traderLocked={isVendorLocked(part)}
+                reason={availability.reasons[0] ?? vendorLockHint(part)}
+                onClick={() => inspectPart(part)}
               />
             ))}
             {Array.from({ length: Math.max(0, 42 - lockerParts.length) }).map((_, index) => (
@@ -419,8 +578,24 @@ function App() {
             part={inspectedPart}
             selections={selections}
             priceCatalog={priceCatalog}
+            vendorLocked={inspectedPart ? isVendorLocked(inspectedPart) : false}
+            lockHint={inspectedPart ? vendorLockHint(inspectedPart) : undefined}
             onApply={choosePart}
             onClearSlot={clearSlot}
+          />
+          <SavedBuildsPanel
+            builds={savedBuilds}
+            currentShareCode={shareCode}
+            copied={shareCopied && !shareIsStale}
+            importCode={importCode}
+            warnings={buildWarnings}
+            dirtyShare={shareIsStale}
+            onSave={saveCurrentBuild}
+            onApply={applySavedBuild}
+            onDelete={deleteSavedBuild}
+            onCopy={copyShareLink}
+            onImportCodeChange={setImportCode}
+            onImport={importSharedBuild}
           />
           <div className="chain-tags" aria-label="Attachment capabilities">
             {shareStatus && <span className="status-tag">{shareStatus}</span>}
@@ -432,6 +607,90 @@ function App() {
       </section>
     </main>
   );
+}
+
+function Dialog({
+  children,
+  className,
+  labelledBy,
+  onClose,
+}: {
+  children: ReactNode;
+  className: string;
+  labelledBy: string;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusable = getFocusableElements(dialogRef.current);
+    (focusable[0] ?? dialogRef.current)?.focus();
+
+    return () => {
+      restoreFocusRef.current?.focus();
+    };
+  }, []);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusable = getFocusableElements(dialogRef.current);
+    if (!focusable.length) {
+      event.preventDefault();
+      dialogRef.current?.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <section
+        ref={dialogRef}
+        className={className}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) {
+    return [];
+  }
+
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => !element.hasAttribute("hidden") && element.offsetParent !== null);
 }
 
 function PanelTitle({ label, icon }: { label: string; icon?: ReactNode }) {
@@ -447,20 +706,26 @@ function StashItem({
   part,
   active,
   available,
+  traderLocked,
   reason,
   onClick,
 }: {
   part: Part;
   active: boolean;
   available: boolean;
+  traderLocked: boolean;
   reason?: string;
   onClick: () => void;
 }) {
+  const locked = !available || traderLocked;
+
   return (
     <button
-      className={`stash-item ${active ? "active" : ""} ${available ? "" : "locked"}`}
-      title={available ? part.name : reason}
+      className={`stash-item ${active ? "active" : ""} ${locked ? "locked" : ""}`}
+      title={locked ? reason : part.name}
       type="button"
+      aria-pressed={active}
+      aria-label={`${part.name}, ${slotLabels[part.slot]}, ${locked ? reason ?? "locked" : deltaPreview(part)}`}
       onClick={onClick}
     >
       <i style={{ background: part.color ?? "#39423c" }} />
@@ -468,8 +733,8 @@ function StashItem({
         <AssetImage asset={partRenderAssetsByPartId[part.id]} src={partRenders[part.id]} alt="" fallback={null} />
       )}
       <strong>{itemAbbrev(part.name)}</strong>
-      <small>{available ? deltaPreview(part) : reason ?? "LOCKED"}</small>
-      <span>{available ? <BadgeCheck size={13} /> : <CircleOff size={13} />}</span>
+      <small>{locked ? reason ?? "LOCKED" : deltaPreview(part)}</small>
+      <span>{locked ? <CircleOff size={13} /> : <BadgeCheck size={13} />}</span>
     </button>
   );
 }
@@ -487,20 +752,6 @@ function StatLine({ statKey, value, base }: { statKey: StatKey; value: number; b
   );
 }
 
-function scorePart(part: Part, weights: Partial<Record<StatKey, number>>, intent: string) {
-  let score = 0;
-
-  for (const key of statKeys) {
-    score += (part.stats[key] ?? 0) * (weights[key] ?? 0);
-  }
-
-  if (intent === "suppressed" && part.tags.includes("suppressor")) {
-    score += 25;
-  }
-
-  return score;
-}
-
 function deltaPreview(part: Part) {
   const entries = statKeys
     .map((key) => ({ key, value: statDelta(part, key) }))
@@ -513,6 +764,39 @@ function deltaPreview(part: Part) {
   }
 
   return entries.map(({ key, value }) => `${statLabels[key]} ${signed(value)}`).join(" / ");
+}
+
+function partScore(part: Part) {
+  return statKeys.reduce((score, key) => {
+    const delta = statDelta(part, key);
+    const normalized = statDirection[key] === "lower" ? -delta : delta;
+    return score + normalized;
+  }, 0);
+}
+
+function vendorName(vendor: string) {
+  return vendor.replace(/\s+LL[1-3]\b/i, "");
+}
+
+function loyaltyLevel(part: Part) {
+  const vendorLevel = part.vendor.match(/\bLL([1-3])\b/i)?.[1];
+  return part.unlock?.level ?? (vendorLevel ? Number(vendorLevel) : undefined);
+}
+
+function isVendorLocked(part: Part) {
+  return (loyaltyLevel(part) ?? 1) > 1;
+}
+
+function vendorLockHint(part: Part) {
+  const level = loyaltyLevel(part);
+  if (!level || level <= 1) {
+    return undefined;
+  }
+
+  const unlock = part.unlock;
+  const vendor = unlock?.vendor ?? vendorName(part.vendor);
+  const task = unlock?.task ? `: ${unlock.task}` : "";
+  return `Reach ${vendor} LL${level}${task}`;
 }
 
 function slotCode(slot: Slot) {

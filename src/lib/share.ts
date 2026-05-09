@@ -1,4 +1,4 @@
-import { parts, platforms, type Slot, type WeaponPlatform } from "../data/armory";
+import { platforms, slotLabels, type Slot, type WeaponPlatform } from "../data/armory";
 import { sanitizeSelections, type BuildSelections } from "./build";
 
 export type ShareBuildPayload = {
@@ -41,7 +41,7 @@ export function decodeBuildShare(value: string): DecodedBuildShare {
 
   try {
     const payload = JSON.parse(fromBase64Url(encoded)) as Partial<ShareBuildPayload>;
-    if (payload.version !== 1 || typeof payload.platformId !== "string" || !isSelections(payload.selections)) {
+    if (payload.version !== 1 || typeof payload.platformId !== "string" || !isShareSelections(payload.selections)) {
       return { ok: false, error: "Build share code is not a supported WepSpec payload." };
     }
 
@@ -51,9 +51,14 @@ export function decodeBuildShare(value: string): DecodedBuildShare {
     }
 
     const selections = sanitizeSelections(platform, payload.selections);
-    const warnings = Object.entries(payload.selections).flatMap(([slot, id]) =>
-      selections[slot as Slot] === id ? [] : [`${id} was removed because it is not compatible with ${platform.name}.`],
-    );
+    const warnings = Object.entries(payload.selections).flatMap(([slot, id]) => {
+      if (selections[slot as Slot] === id) {
+        return [];
+      }
+
+      const label = slot in slotLabels ? slotLabels[slot as Slot] : slot;
+      return [`${id} in ${label} was removed because it is not compatible with ${platform.name}.`];
+    });
 
     return { ok: true, platform, selections, warnings };
   } catch {
@@ -98,13 +103,10 @@ function fromBase64Url(value: string) {
   return atob(padded);
 }
 
-function isSelections(value: unknown): value is BuildSelections {
+function isShareSelections(value: unknown): value is BuildSelections {
   if (!value || typeof value !== "object") {
     return false;
   }
 
-  return Object.entries(value).every(([slot, id]) => {
-    const part = parts.find((candidate) => candidate.id === id);
-    return typeof id === "string" && part !== undefined && part.slot === slot;
-  });
+  return Object.values(value).every((id) => typeof id === "string");
 }

@@ -1,5 +1,5 @@
 import { CircleOff, ShieldCheck } from "lucide-react";
-import { slotLabels, statDirection, statLabels, type Part, type StatKey, type WeaponPlatform } from "../data/armory";
+import { parts, slotLabels, statDirection, statLabels, type Part, type StatKey, type WeaponPlatform } from "../data/armory";
 import { checkAvailability, statDelta, type BuildSelections } from "../lib/build";
 import type { PriceCatalog } from "./BuildSummary";
 
@@ -10,6 +10,8 @@ type Props = {
   priceCatalog?: PriceCatalog;
   currency?: string;
   className?: string;
+  vendorLocked?: boolean;
+  lockHint?: string;
   onApply?: (part: Part) => void;
   onClearSlot?: (slot: Part["slot"]) => void;
 };
@@ -23,6 +25,8 @@ export function PartInspector({
   priceCatalog = {},
   currency = "$",
   className,
+  vendorLocked = false,
+  lockHint,
   onApply,
   onClearSlot,
 }: Props) {
@@ -35,7 +39,9 @@ export function PartInspector({
   }
 
   const availability = checkAvailability(platform, part, selections);
+  const canApply = availability.available && !vendorLocked;
   const active = selections[part.slot] === part.id;
+  const installedPart = selections[part.slot] ? parts.find((candidate) => candidate.id === selections[part.slot]) ?? null : null;
   const price = priceCatalog[part.id];
 
   return (
@@ -59,18 +65,25 @@ export function PartInspector({
         </div>
         <div>
           <dt>Status</dt>
-          <dd>{availability.available ? "Compatible" : "Locked"}</dd>
+          <dd>{vendorLocked ? "Vendor locked" : availability.available ? "Compatible" : "Locked"}</dd>
         </div>
       </dl>
 
-      <div className="part-inspector__compatibility" data-compatible={availability.available}>
-        {availability.available ? <ShieldCheck size={15} /> : <CircleOff size={15} />}
-        <span>{availability.available ? `Fits ${platform.name}` : availability.reasons[0] ?? `Does not fit ${platform.name}`}</span>
+      <div className="part-inspector__compatibility" data-compatible={canApply}>
+        {canApply ? <ShieldCheck size={15} /> : <CircleOff size={15} />}
+        <span>{canApply ? `Fits ${platform.name}` : lockHint ?? availability.reasons[0] ?? `Does not fit ${platform.name}`}</span>
       </div>
+
+      {!active && installedPart && (
+        <div className="part-inspector__swap">
+          <span>Compare vs {installedPart.name}</span>
+          <strong>{canApply ? "Ready to apply" : nextActionLabel(availability.reasons[0], lockHint)}</strong>
+        </div>
+      )}
 
       <div className="part-inspector__stats">
         {statKeys.map((key) => (
-          <PartStatDelta key={key} part={part} statKey={key} />
+          <PartStatDelta key={key} part={part} installedPart={installedPart} statKey={key} />
         ))}
       </div>
 
@@ -91,7 +104,7 @@ export function PartInspector({
       {part.notes && <p className="part-inspector__notes">{part.notes}</p>}
 
       <div className="part-inspector__actions">
-        <button type="button" disabled={!availability.available || active || !onApply} onClick={() => onApply?.(part)}>
+        <button type="button" disabled={!canApply || active || !onApply} onClick={() => onApply?.(part)}>
           {active ? "Installed" : "Apply"}
         </button>
         {active && (
@@ -104,8 +117,8 @@ export function PartInspector({
   );
 }
 
-function PartStatDelta({ part, statKey }: { part: Part; statKey: StatKey }) {
-  const delta = statDelta(part, statKey);
+function PartStatDelta({ part, installedPart, statKey }: { part: Part; installedPart: Part | null; statKey: StatKey }) {
+  const delta = statDelta(part, statKey) - (installedPart && installedPart.id !== part.id ? statDelta(installedPart, statKey) : 0);
   const improved = statDirection[statKey] === "higher" ? delta >= 0 : delta <= 0;
 
   return (
@@ -127,4 +140,16 @@ function signed(value: number) {
 
 function formatTag(tag: string) {
   return tag.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function nextActionLabel(reason?: string, lockHint?: string) {
+  if (lockHint) {
+    return lockHint;
+  }
+
+  if (!reason) {
+    return "Check slot chain";
+  }
+
+  return reason.replace(/^Needs /, "Add ").replace(/\.$/, "");
 }
