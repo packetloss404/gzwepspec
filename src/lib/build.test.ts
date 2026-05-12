@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { parts, platforms, type Part, type WeaponPlatform } from "../data/armory";
-import { checkAvailability, sanitizeSelections, totalStats, type BuildSelections } from "./build";
+import { checkAvailability, isSlot, sanitizeSelections, totalStats, type BuildSelections } from "./build";
+import { formatSigned, formatSlotCode, formatTag, statKeys } from "./formatting";
 
 const m4 = platforms.find((platform) => platform.id === "m4a1")!;
 
@@ -29,6 +30,23 @@ describe("sanitizeSelections", () => {
     expect(sanitizeSelections(m4, selections)).toEqual({
       barrel: "m4-145-barrel",
     });
+  });
+});
+
+describe("slot validation and formatting", () => {
+  it("validates slots before selection keys are treated as typed slots", () => {
+    expect(isSlot("barrel")).toBe(true);
+    expect(isSlot("staleSlot")).toBe(false);
+    expect(isSlot("__proto__")).toBe(false);
+  });
+
+  it("shares stat, slot, signed, and rich tag labels", () => {
+    expect(statKeys).toEqual(["accuracy", "recoil", "ads", "ergonomics", "weight", "velocity"]);
+    expect(formatSlotCode("opticMount")).toBe("MNT");
+    expect(formatSigned(1.234)).toBe("+1.23");
+    expect(formatSigned(-2)).toBe("-2");
+    expect(formatTag("m_lok")).toBe("M-LOK");
+    expect(formatTag("thread_1_2x28")).toBe("1/2x28 muzzle thread");
   });
 });
 

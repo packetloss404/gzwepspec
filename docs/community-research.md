@@ -1,13 +1,13 @@
 # Community Research Notes
 
-These notes capture the helper work requested for WepSpec builder UX. They are intentionally short so implementation workers can wire the components without re-reading every source.
+These notes capture public feedback that can shape WepSpec builder UX. They are intentionally short so the product decisions stay tied to the linked sources.
 
 ## Requests to Support
 
-- Save and quickly re-apply full weapon builds. Reddit users explicitly asked for a blueprint or preset system because rebuilding configurations is click-heavy.
-- Share builds outside the app. Community threads repeatedly compare the desired experience to a gunsmith/loadout builder and ask for comprehensive weapon/part references.
+- Save and quickly re-apply full weapon builds. One linked Reddit suggestion asks for a blueprint system because rebuilding configurations is click-heavy.
+- Share builds outside the app. The sampled community threads compare the desired experience to a gunsmith/loadout builder and ask for comprehensive weapon/part references.
 - Explain compatibility. Players call out confusion around which rails, adapters, mounts, and platform families are needed before an attachment will fit.
-- Summarize vendors and prices. Community database work is actively collecting item prices, and forum posts discuss whether vendor builds or individual parts are cheaper.
+- Summarize vendors and prices. Sampled community database work includes item price/detail collection, and forum posts discuss whether vendor builds or individual parts are cheaper.
 
 ## Product Implications
 
@@ -19,7 +19,7 @@ These notes capture the helper work requested for WepSpec builder UX. They are i
 ## Sources
 
 - Gray Zone Warfare Wiki, "Weapon Parts" - notes that weapon parts alter firearm performance and are grouped into parts and attachments: https://gray-zone-warfare.fandom.com/wiki/Weapon_Parts
-- Steam store page for Gray Zone Warfare - current public store copy references new weapons, hundreds of weapon parts, and gear pieces: https://store.steampowered.com/app/2479810/Gray_Zone_Warfare/
+- Steam store page for Gray Zone Warfare - store copy reviewed during research referenced new weapons, hundreds of weapon parts, and gear pieces: https://store.steampowered.com/app/2479810/Gray_Zone_Warfare/
 - Reddit, "Confused about weapon parts/attachments in Gray Warfare" - players ask for lists of compatible attachments, needed rails/adapters, vendor-only vs loot-only sources, and M-LOK/Picatinny clarity: https://www.reddit.com/r/GrayZoneWarfare/comments/1p5j10m/confused_about_weapon_partsattachments_in_gray/
 - Reddit, "[Suggestion] I'd love to see a blueprint mechanism so that we can save and quickly rebuild weapon configurations" - direct request for saved weapon configurations: https://www.reddit.com/r/GrayZoneWarfare/comments/1ha6db9
 - Reddit, "Weapon Building" - asks for a comprehensive weapon-building guide and clearer compatibility information: https://www.reddit.com/r/GrayZoneWarfare/comments/1g8ldtn

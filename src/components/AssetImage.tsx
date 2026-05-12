@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ImgHTMLAttributes, type ReactNode } from "react";
 import {
   getAssetForArmoryId,
+  getGameMediaAsset,
   getLocalAsset,
+  type GameMediaAssetKey,
+  type GameMediaEntry,
   type LocalAssetCategory,
   type LocalAssetEntry,
   type PartAssetKey,
@@ -10,8 +13,10 @@ import {
 
 type ManifestAssetLookup =
   | LocalAssetEntry
+  | GameMediaEntry
   | { category: "weapon"; id: WeaponAssetKey }
   | { category: "part"; id: PartAssetKey }
+  | { category: "game-media"; id: GameMediaAssetKey }
   | { category: LocalAssetCategory; armoryId: string };
 
 export type AssetImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "alt" | "children"> & {
@@ -25,20 +30,12 @@ export type AssetImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | 
 
 const fallbackStyle: CSSProperties = {
   alignItems: "center",
-  background: "rgba(255, 255, 255, 0.08)",
   color: "currentColor",
   display: "inline-flex",
-  fontSize: "0.75rem",
-  fontWeight: 700,
   justifyContent: "center",
-  lineHeight: 1.1,
-  minHeight: "2.5rem",
-  minWidth: "2.5rem",
-  overflow: "hidden",
-  textAlign: "center",
 };
 
-function resolveAsset(asset: ManifestAssetLookup | undefined): LocalAssetEntry | undefined {
+function resolveAsset(asset: ManifestAssetLookup | undefined): LocalAssetEntry | GameMediaEntry | undefined {
   if (!asset) {
     return undefined;
   }
@@ -51,7 +48,32 @@ function resolveAsset(asset: ManifestAssetLookup | undefined): LocalAssetEntry |
     return getAssetForArmoryId(asset.category, asset.armoryId);
   }
 
+  if (asset.category === "game-media") {
+    return getGameMediaAsset(asset.id);
+  }
+
   return getLocalAsset(asset.category, asset.id);
+}
+
+function getFallbackText(label: string) {
+  const words = label
+    .replace(/[^\w\s-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "IMG";
+  }
+
+  if (words.length === 1) {
+    return words[0].slice(0, 3).toUpperCase();
+  }
+
+  return words
+    .slice(0, 3)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
 }
 
 export function AssetImage({
@@ -69,24 +91,30 @@ export function AssetImage({
 }: AssetImageProps) {
   const manifestAsset = useMemo(() => resolveAsset(asset), [asset]);
   const primarySrc = src ?? manifestAsset?.src;
-  const [activeSrc, setActiveSrc] = useState(primarySrc);
-  const [failed, setFailed] = useState(!primarySrc);
+  const initialSrc = primarySrc ?? fallbackSrc;
+  const [activeSrc, setActiveSrc] = useState(initialSrc);
+  const [failed, setFailed] = useState(!initialSrc);
+  const label = fallbackLabel ?? manifestAsset?.label ?? alt;
+  const fallbackText = getFallbackText(label);
+  const category = manifestAsset?.category ?? asset?.category ?? "unknown";
 
   useEffect(() => {
-    setActiveSrc(primarySrc);
-    setFailed(!primarySrc);
-  }, [primarySrc]);
+    setActiveSrc(initialSrc);
+    setFailed(!initialSrc);
+  }, [initialSrc]);
 
   if (!activeSrc || failed) {
     return (
       <span
         aria-label={alt || undefined}
         className={className ? `asset-image-fallback ${className}` : "asset-image-fallback"}
+        data-asset-category={category}
+        data-asset-status="fallback"
         role={alt ? "img" : undefined}
         style={{ ...fallbackStyle, ...style }}
-        title={fallbackLabel ?? manifestAsset?.label ?? alt}
+        title={label}
       >
-        {fallback ?? fallbackLabel ?? manifestAsset?.label ?? alt}
+        {fallback === null ? null : fallback ?? <span className="asset-image-fallback__mark">{fallbackText}</span>}
       </span>
     );
   }
@@ -95,7 +123,9 @@ export function AssetImage({
     <img
       {...imageProps}
       alt={alt}
-      className={className}
+      className={className ? `asset-image ${className}` : "asset-image"}
+      data-asset-category={category}
+      data-asset-status="loaded"
       decoding={imageProps.decoding ?? "async"}
       loading={imageProps.loading ?? "lazy"}
       onError={(event) => {

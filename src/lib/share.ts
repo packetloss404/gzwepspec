@@ -1,5 +1,5 @@
-import { platforms, slotLabels, type Slot, type WeaponPlatform } from "../data/armory";
-import { sanitizeSelections, type BuildSelections } from "./build";
+import { platforms, slotLabels, type WeaponPlatform } from "../data/armory";
+import { isSlot, sanitizeSelections, type BuildSelections } from "./build";
 
 export type ShareBuildPayload = {
   version: 1;
@@ -52,11 +52,11 @@ export function decodeBuildShare(value: string): DecodedBuildShare {
 
     const selections = sanitizeSelections(platform, payload.selections);
     const warnings = Object.entries(payload.selections).flatMap(([slot, id]) => {
-      if (selections[slot as Slot] === id) {
+      if (isSlot(slot) && selections[slot] === id) {
         return [];
       }
 
-      const label = slot in slotLabels ? slotLabels[slot as Slot] : slot;
+      const label = isSlot(slot) ? slotLabels[slot] : slot;
       return [`${id} in ${label} was removed because it is not compatible with ${platform.name}.`];
     });
 

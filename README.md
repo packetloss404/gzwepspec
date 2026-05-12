@@ -1,6 +1,6 @@
 # WepSpec Armory
 
-WepSpec is a React + Three.js/Vite prototype for planning Gray Zone Warfare weapon builds. The current preview is a layered 2D armory workbench: a base weapon render sits under slot anchors and compatible part layers, while the surrounding UI shows fit status, stat changes, vendor/pricing hints, share links, and asset provenance.
+WepSpec is a React/Vite prototype for planning Gray Zone Warfare weapon builds. The current preview is a layered 2D armory workbench: a base weapon render sits under slot anchors and compatible part layers, while the surrounding UI shows fit status, stat changes, vendor/pricing hints, share links, and asset provenance.
 
 This project is a fan-made planning aid. It is not affiliated with MADFINGER Games, and the starter catalog should be treated as prototype data until verified against an in-game export or curated source set.
 
@@ -59,4 +59,3 @@ npm run preview
 ## v1 Direction
 
 The v1 line should keep the app useful as a focused build planner rather than a full game database. Priorities are stable compatibility behavior, a documented catalog format, honest provenance, and a shippable UI for building, inspecting, sharing, and validating weapon configurations.
-

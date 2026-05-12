@@ -4,10 +4,10 @@ WepSpec uses manifest-backed asset attribution. The canonical per-asset inventor
 
 ## Local Prototype Renders
 
-Weapon and part inspect renders currently stored in this folder were sourced from the Gray Zone Warfare Wiki on Fandom.
+Weapon and part inspect renders stored in this folder were gathered from the Gray Zone Warfare Wiki on Fandom for prototype display.
 
 - Source: https://gray-zone-warfare.fandom.com/
-- Fandom community content is generally available under CC-BY-SA unless otherwise noted.
+- Fandom pages may include community content under CC-BY-SA, but that does not by itself confirm rights for embedded game artwork or screenshots.
 - Gray Zone Warfare and its game artwork belong to MADFINGER Games.
 - Local copies are used for prototype UI rendering reliability instead of hotlinking Fandom CDN image URLs.
 
@@ -17,7 +17,8 @@ Official Gray Zone Warfare Steam store images are referenced remotely from `src/
 
 - Source: https://store.steampowered.com/app/2479810/Gray_Zone_Warfare/
 - Owner: MADFINGER Games.
-- Strategy: keep remote unless a future reviewed ingestion step stores local copies with attribution.
+- Strategy: keep remote unless a future reviewed ingestion step stores local copies with attribution and a source/terms review.
+- Note: Steam source provenance is not permission to redistribute the media.
 
 ## Per-Asset Manifest Policy
 
@@ -39,4 +40,3 @@ Files without manifest entries should be treated as incomplete and should not sh
 - The manifest records provenance but does not automatically verify license status.
 - Community wiki pages and CDN URLs can change over time.
 - Missing catalog art should fall back to procedural preview shapes until reviewed assets are available.
-

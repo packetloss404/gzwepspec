@@ -2,7 +2,6 @@ import {
   BadgeCheck,
   ChevronDown,
   CircleOff,
-  Construction,
   Copy,
   Crosshair,
   ExternalLink,
@@ -10,10 +9,8 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
-  Users,
-  X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import packageJson from "../package.json";
 import { AssetImage } from "./components/AssetImage";
 import { BuildSummary, type PriceCatalog } from "./components/BuildSummary";
@@ -29,15 +26,16 @@ import {
   type Part,
   type Slot,
   type StatKey,
+  type WeaponPlatform,
 } from "./data/armory";
 import { gameAssets, partRenders } from "./data/gameAssets";
 import { partRenderAssetsByPartId } from "./data/assetManifest";
 import {
   checkAvailability,
   compatibleParts,
-  formatTag,
   statDelta,
 } from "./lib/build";
+import { formatSigned, formatSlotCode, formatTag, statKeys } from "./lib/formatting";
 import {
   applyBuildPreset,
   createBuildPreset,
@@ -50,7 +48,6 @@ import {
 import { useBuildState } from "./hooks/useBuildState";
 import { decodeBuildShare, encodeBuildShare } from "./lib/share";
 
-const statKeys: StatKey[] = ["accuracy", "recoil", "ads", "ergonomics", "weight", "velocity"];
 const loyaltyLevels = ["1", "2", "3"] as const;
 
 type SortMode = "relevance" | "name" | "vendor" | "price-asc" | "price-desc" | "best-stat";
@@ -79,7 +76,6 @@ function App() {
     copyShareLink: copyBuildShareLink,
   } = useBuildState();
   const [query, setQuery] = useState("");
-  const [showSquadModal, setShowSquadModal] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareCode, setShareCode] = useState(currentEncodedShare);
@@ -109,6 +105,13 @@ function App() {
     () => Array.from(new Set(parts.map((part) => vendorName(part.vendor)))).sort((a, b) => a.localeCompare(b)),
     [],
   );
+  const activeSlotSummary = useMemo(() => {
+    const rows = compatibleParts(platform, activeSlot, selections);
+    const compatible = rows.filter(({ availability }) => availability.available).length;
+    const earlyVendor = rows.filter(({ part, availability }) => availability.available && !isHigherLoyalty(part)).length;
+
+    return { total: rows.length, compatible, earlyVendor };
+  }, [activeSlot, platform, selections]);
   const lockerParts = useMemo(() => {
     const rows = parts
       .filter((part) => availableSlots.includes(part.slot))
@@ -125,7 +128,7 @@ function App() {
           return false;
         }
 
-        if (hideLocked && isVendorLocked(part)) {
+        if (hideLocked && isHigherLoyalty(part)) {
           return false;
         }
 
@@ -201,6 +204,7 @@ function App() {
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    settingsMenuRef.current?.querySelector<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')?.focus();
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
@@ -209,11 +213,6 @@ function App() {
   }, [settingsOpen]);
 
   function choosePart(part: Part) {
-    if (isVendorLocked(part)) {
-      inspectPart(part);
-      return;
-    }
-
     chooseBuildPart(part);
   }
 
@@ -273,6 +272,10 @@ function App() {
     setBuildWarnings([]);
   }
 
+  function scrollToSection(sectionId: string) {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <main className="game-shell">
       <div className="scene-backdrop" aria-hidden="true">
@@ -281,9 +284,9 @@ function App() {
       <header className="hud-bar">
         <nav className="hud-tabs" aria-label="Armory sections">
           <AssetImage className="brand-strip" src={gameAssets.capsule} alt="Gray Zone Warfare" />
-          <button className="active" type="button">Weapons</button>
-          <button type="button" onClick={() => setShowSquadModal(true)}>Parts</button>
-          <button type="button" onClick={() => setShowSquadModal(true)}>Stats</button>
+          <button className="active" type="button" onClick={() => scrollToSection("weapon-panel")}>Weapons</button>
+          <button type="button" onClick={() => scrollToSection("parts-locker")}>Parts</button>
+          <button type="button" onClick={() => scrollToSection("build-workbench")}>Stats</button>
         </nav>
         <div className="hud-actions">
           <button
@@ -291,10 +294,10 @@ function App() {
             type="button"
             onClick={() => {
               setSettingsOpen(false);
-              setShowSquadModal(true);
+              scrollToSection("build-workbench");
             }}
           >
-            <Users size={14} /> Create squad
+            <SlidersHorizontal size={14} /> Saved builds
           </button>
           <div className="settings-wrap">
             <button
@@ -319,7 +322,7 @@ function App() {
             <span>Version</span>
             <strong>v{packageJson.version}</strong>
           </div>
-          <a href="https://github.com/packetloss404" target="_blank" rel="noreferrer" role="menuitem">
+          <a href="https://github.com/packetloss404/gzwepspec" target="_blank" rel="noreferrer" role="menuitem">
             <Github size={14} />
             GitHub
             <ExternalLink size={12} />
@@ -332,20 +335,8 @@ function App() {
         </div>
       )}
 
-      {showSquadModal && (
-        <Dialog className="coming-soon-modal" labelledBy="coming-soon-title" onClose={() => setShowSquadModal(false)}>
-          <button className="modal-close" type="button" aria-label="Close" onClick={() => setShowSquadModal(false)}>
-            <X size={16} />
-          </button>
-          <div className="coming-soon-icon">
-            <Construction size={34} />
-          </div>
-          <h2 id="coming-soon-title">Feature Coming Soon</h2>
-        </Dialog>
-      )}
-
       <section className="inventory-layout">
-        <aside className="weapon-window glass">
+        <aside id="weapon-panel" className="weapon-window glass">
           <div className="window-head">
             <div>
               <h1>{platform.name}</h1>
@@ -363,7 +354,7 @@ function App() {
           </div>
 
           <div className="weapon-ammo">
-            <span>{selectedParts.length} parts installed</span>
+            <span>{selectedParts.length} parts / {platform.skins?.length ?? 0} finishes listed</span>
             <strong>{platform.unlock ? `${platform.vendor} LL${platform.unlock.level}` : platform.vendor}</strong>
           </div>
 
@@ -375,7 +366,7 @@ function App() {
                 ) : (
                   <i style={{ background: part.color ?? "#39423c" }} />
                 )}
-                <span>{slotCode(part.slot)}</span>
+                <span>{formatSlotCode(part.slot)}</span>
               </button>
             ))}
             {Array.from({ length: Math.max(0, 8 - selectedParts.length) }).map((_, index) => (
@@ -413,7 +404,7 @@ function App() {
                   aria-label={`${slotLabels[slot]} slot, ${selected ? selected.name : `${count} compatible parts`}`}
                   onClick={() => focusSlot(slot)}
                 >
-                  <span>{slotCode(slot)}</span>
+                  <span>{formatSlotCode(slot)}</span>
                   <strong>{selected ? itemAbbrev(selected.name) : "+"}</strong>
                   <small>{selected ? selected.type : `${count} fit`}</small>
                 </button>
@@ -422,14 +413,19 @@ function App() {
           </div>
 
           <p className="weapon-copy">
-            Compatibility is calculated from installed receivers, rails, adapters, and muzzle threads. Add a mount to expose more parts.
+            Mounts, rails, adapters, and muzzle threads control which parts fit.
           </p>
         </aside>
 
-        <aside className="locker glass">
+        <aside id="parts-locker" className="locker glass">
           <div className="locker-head">
-            <PanelTitle label="Your Locker" />
-            <strong>$ 10,000</strong>
+            <div>
+              <PanelTitle label="Parts Locker" />
+              <span>
+                {slotLabels[activeSlot]}: {activeSlotSummary.compatible} fit / {activeSlotSummary.earlyVendor} LL1
+              </span>
+            </div>
+            <strong>{lockerParts.length} shown</strong>
           </div>
 
           <a className="official-card" href={gameAssets.storeUrl} target="_blank" rel="noreferrer">
@@ -438,19 +434,27 @@ function App() {
           </a>
 
           <div className="platform-grid">
-            {platforms.map((item) => (
-              <button
-                key={item.id}
-                className={item.id === platform.id ? "weapon-tile active" : "weapon-tile"}
-                type="button"
-                aria-pressed={item.id === platform.id}
-                onClick={() => selectPlatform(item.id)}
-              >
-                <Crosshair size={15} />
-                <span>{item.name}</span>
-                <small>{item.caliber}</small>
-              </button>
-            ))}
+            {platforms.map((item) => {
+              const installed = item.requiredSlots.length + item.optionalSlots.length;
+              const finishCount = item.skins?.length ?? 0;
+
+              return (
+                <button
+                  key={item.id}
+                  className={`weapon-tile ${item.id === platform.id ? "active" : ""}`}
+                  type="button"
+                  aria-pressed={item.id === platform.id}
+                  aria-label={`${item.name}, ${item.caliber}, ${platformVendorLabel(item)}, ${finishCount} finishes listed`}
+                  onClick={() => selectPlatform(item.id)}
+                >
+                  <Crosshair size={15} />
+                  <span>{item.name}</span>
+                  <small>{item.caliber}</small>
+                  <em>{platformVendorLabel(item)}</em>
+                  <b>{installed} slots / {finishCount} finishes</b>
+                </button>
+              );
+            })}
           </div>
 
           <div className="locker-tools">
@@ -473,11 +477,11 @@ function App() {
             </label>
             <label className="stash-search">
               <Search size={15} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter stash" aria-label="Filter stash" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter parts" aria-label="Filter parts" />
             </label>
           </div>
 
-          <div className="locker-filters" aria-label="Stash filters">
+          <div className="locker-filters" aria-label="Part filters">
             <button
               className={currentSlotOnly ? "active" : ""}
               type="button"
@@ -485,7 +489,7 @@ function App() {
               aria-pressed={currentSlotOnly}
               onClick={() => setCurrentSlotOnly((enabled) => !enabled)}
             >
-              {slotCode(activeSlot)}
+              {formatSlotCode(activeSlot)}
             </button>
             <button
               className={compatibleOnly ? "active" : ""}
@@ -499,11 +503,11 @@ function App() {
             <button
               className={hideLocked ? "active" : ""}
               type="button"
-              aria-label="Hide loyalty locked parts"
+              aria-label="Show only LL1 parts"
               aria-pressed={hideLocked}
               onClick={() => setHideLocked((enabled) => !enabled)}
             >
-              LL Open
+              LL1
             </button>
             <label>
               <select aria-label="Filter vendor" value={vendorFilter} onChange={(event) => setVendorFilter(event.target.value)}>
@@ -528,7 +532,7 @@ function App() {
               <ChevronDown size={13} />
             </label>
             <label>
-              <select aria-label="Sort stash" value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
+              <select aria-label="Sort parts" value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
                 <option value="relevance">Sort: Fit</option>
                 <option value="best-stat">Sort: Stat</option>
                 <option value="name">Sort: Name</option>
@@ -540,26 +544,47 @@ function App() {
             </label>
           </div>
 
-          <div className="stash-grid">
-            {lockerParts.map(({ part, availability }) => (
-              <StashItem
-                key={part.id}
-                part={part}
-                active={selections[part.slot] === part.id}
-                available={availability.available}
-                traderLocked={isVendorLocked(part)}
-                reason={availability.reasons[0] ?? vendorLockHint(part)}
-                onClick={() => inspectPart(part)}
-              />
-            ))}
-            {Array.from({ length: Math.max(0, 42 - lockerParts.length) }).map((_, index) => (
-              <div className="stash-empty" key={`empty-${index}`} />
-            ))}
-          </div>
+          {lockerParts.length ? (
+            <div className="stash-grid">
+              {lockerParts.map(({ part, availability }) => (
+                <StashItem
+                  key={part.id}
+                  part={part}
+                  active={selections[part.slot] === part.id}
+                  inspected={inspectedPart?.id === part.id}
+                  available={availability.available}
+                  traderLocked={isHigherLoyalty(part)}
+                  reason={availability.reasons[0] ?? loyaltyHint(part)}
+                  onClick={() => inspectPart(part)}
+                />
+              ))}
+              {Array.from({ length: Math.max(0, 42 - lockerParts.length) }).map((_, index) => (
+                <div className="stash-empty" key={`empty-${index}`} />
+              ))}
+            </div>
+          ) : (
+            <div className="stash-null">
+              <strong>No matching parts</strong>
+              <span>Adjust the slot, vendor, LL, or fit filters.</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setCurrentSlotOnly(false);
+                  setCompatibleOnly(false);
+                  setHideLocked(false);
+                  setVendorFilter("all");
+                  setLevelFilter("all");
+                }}
+              >
+                Reset filters
+              </button>
+            </div>
+          )}
         </aside>
       </section>
 
-      <section className="bench glass">
+      <section id="build-workbench" className="bench glass">
         <div className="bench-head">
           <PanelTitle label="Build Workbench" icon={<SlidersHorizontal size={15} />} />
           <button type="button" onClick={copyShareLink}>
@@ -578,8 +603,8 @@ function App() {
             part={inspectedPart}
             selections={selections}
             priceCatalog={priceCatalog}
-            vendorLocked={inspectedPart ? isVendorLocked(inspectedPart) : false}
-            lockHint={inspectedPart ? vendorLockHint(inspectedPart) : undefined}
+            vendorLocked={inspectedPart ? isHigherLoyalty(inspectedPart) : false}
+            lockHint={inspectedPart ? loyaltyHint(inspectedPart) : undefined}
             onApply={choosePart}
             onClearSlot={clearSlot}
           />
@@ -609,90 +634,6 @@ function App() {
   );
 }
 
-function Dialog({
-  children,
-  className,
-  labelledBy,
-  onClose,
-}: {
-  children: ReactNode;
-  className: string;
-  labelledBy: string;
-  onClose: () => void;
-}) {
-  const dialogRef = useRef<HTMLElement>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focusable = getFocusableElements(dialogRef.current);
-    (focusable[0] ?? dialogRef.current)?.focus();
-
-    return () => {
-      restoreFocusRef.current?.focus();
-    };
-  }, []);
-
-  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-      return;
-    }
-
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const focusable = getFocusableElements(dialogRef.current);
-    if (!focusable.length) {
-      event.preventDefault();
-      dialogRef.current?.focus();
-      return;
-    }
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
-      <section
-        ref={dialogRef}
-        className={className}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={labelledBy}
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
-        {children}
-      </section>
-    </div>
-  );
-}
-
-function getFocusableElements(container: HTMLElement | null) {
-  if (!container) {
-    return [];
-  }
-
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    ),
-  ).filter((element) => !element.hasAttribute("hidden") && element.offsetParent !== null);
-}
-
 function PanelTitle({ label, icon }: { label: string; icon?: ReactNode }) {
   return (
     <div className="panel-title">
@@ -705,6 +646,7 @@ function PanelTitle({ label, icon }: { label: string; icon?: ReactNode }) {
 function StashItem({
   part,
   active,
+  inspected,
   available,
   traderLocked,
   reason,
@@ -712,29 +654,40 @@ function StashItem({
 }: {
   part: Part;
   active: boolean;
+  inspected: boolean;
   available: boolean;
   traderLocked: boolean;
   reason?: string;
   onClick: () => void;
 }) {
-  const locked = !available || traderLocked;
+  const locked = !available;
+  const level = loyaltyLevel(part) ?? 1;
+  const price = part.price?.amount;
+  const status = active ? "Installed" : traderLocked ? `LL${level}` : available ? "Fits" : "Blocked";
+  const statusIcon = !available ? <CircleOff size={13} /> : <BadgeCheck size={13} />;
 
   return (
     <button
-      className={`stash-item ${active ? "active" : ""} ${locked ? "locked" : ""}`}
-      title={locked ? reason : part.name}
+      className={`stash-item ${active ? "active" : ""} ${inspected ? "inspected" : ""} ${locked ? "locked" : ""}`}
+      title={locked ? reason : traderLocked ? reason ?? part.name : part.name}
       type="button"
       aria-pressed={active}
-      aria-label={`${part.name}, ${slotLabels[part.slot]}, ${locked ? reason ?? "locked" : deltaPreview(part)}`}
+      aria-label={`${part.name}, ${slotLabels[part.slot]}, ${locked ? reason ?? "blocked" : traderLocked ? reason ?? `LL${level}` : deltaPreview(part)}`}
       onClick={onClick}
     >
+      <span className="stash-item__slot">{formatSlotCode(part.slot)}</span>
+      <span className="stash-item__status">{statusIcon}{status}</span>
       <i style={{ background: part.color ?? "#39423c" }} />
-      {(partRenderAssetsByPartId[part.id] || partRenders[part.id]) && (
-        <AssetImage asset={partRenderAssetsByPartId[part.id]} src={partRenders[part.id]} alt="" fallback={null} />
-      )}
+      <AssetImage
+        asset={{ category: "part", armoryId: part.id }}
+        src={partRenders[part.id]}
+        alt=""
+        fallback={<span className="asset-image-fallback__mark">No art</span>}
+        fallbackLabel={`${part.name} reviewed art pending`}
+      />
       <strong>{itemAbbrev(part.name)}</strong>
-      <small>{locked ? reason ?? "LOCKED" : deltaPreview(part)}</small>
-      <span>{locked ? <CircleOff size={13} /> : <BadgeCheck size={13} />}</span>
+      <small>{vendorName(part.vendor)} LL{level}{price ? ` / $${price.toLocaleString()}` : ""}</small>
+      <em>{locked ? reason ?? "Blocked" : traderLocked ? reason ?? deltaPreview(part) : deltaPreview(part)}</em>
     </button>
   );
 }
@@ -747,7 +700,7 @@ function StatLine({ statKey, value, base }: { statKey: StatKey; value: number; b
     <div className="stat-line">
       <span>{statLabels[statKey]}</span>
       <strong>{statKey === "weight" ? value.toFixed(2) : value}</strong>
-      <em className={positive ? "good" : "bad"}>{signed(delta)}</em>
+      <em className={positive ? "good" : "bad"}>{formatSigned(delta)}</em>
     </div>
   );
 }
@@ -763,7 +716,7 @@ function deltaPreview(part: Part) {
     return part.type;
   }
 
-  return entries.map(({ key, value }) => `${statLabels[key]} ${signed(value)}`).join(" / ");
+  return entries.map(({ key, value }) => `${statLabels[key]} ${formatSigned(value)}`).join(" / ");
 }
 
 function partScore(part: Part) {
@@ -783,11 +736,15 @@ function loyaltyLevel(part: Part) {
   return part.unlock?.level ?? (vendorLevel ? Number(vendorLevel) : undefined);
 }
 
-function isVendorLocked(part: Part) {
+function isHigherLoyalty(part: Part) {
   return (loyaltyLevel(part) ?? 1) > 1;
 }
 
-function vendorLockHint(part: Part) {
+function platformVendorLabel(platform: WeaponPlatform) {
+  return platform.unlock ? `${platform.unlock.vendor} LL${platform.unlock.level}` : `${platform.vendor} LL1`;
+}
+
+function loyaltyHint(part: Part) {
   const level = loyaltyLevel(part);
   if (!level || level <= 1) {
     return undefined;
@@ -795,29 +752,7 @@ function vendorLockHint(part: Part) {
 
   const unlock = part.unlock;
   const vendor = unlock?.vendor ?? vendorName(part.vendor);
-  const task = unlock?.task ? `: ${unlock.task}` : "";
-  return `Reach ${vendor} LL${level}${task}`;
-}
-
-function slotCode(slot: Slot) {
-  const codes: Record<Slot, string> = {
-    receiver: "RCVR",
-    barrel: "BRL",
-    handguard: "HND",
-    muzzle: "MZL",
-    stock: "STK",
-    pistolGrip: "GRP",
-    magazine: "MAG",
-    opticMount: "MNT",
-    optic: "OPT",
-    foregrip: "FGR",
-    tactical: "LGT",
-    laser: "LSR",
-    underbarrelAdapter: "BOT",
-    sideRailAdapter: "RAIL",
-  };
-
-  return codes[slot];
+  return `Listed at ${vendor} LL${level}`;
 }
 
 function itemAbbrev(name: string) {
@@ -827,15 +762,6 @@ function itemAbbrev(name: string) {
     .filter((word) => !["Round", "Tactical", "Polymer", "Combat", "Weapon"].includes(word))
     .slice(0, 3)
     .join(" ");
-}
-
-function signed(value: number) {
-  if (value === 0) {
-    return "0";
-  }
-
-  const normalized = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-  return value > 0 ? `+${normalized}` : normalized;
 }
 
 export default App;

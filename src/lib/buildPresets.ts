@@ -1,7 +1,8 @@
-import { slotOrder, type Part, type Slot, type StatKey, type WeaponPlatform } from "../data/armory";
+import { slotOrder, type Part, type StatKey, type WeaponPlatform } from "../data/armory";
 import {
   checkAvailability,
   compatibleParts,
+  isSlot,
   sanitizeSelections,
   starterSelections,
   type BuildSelections,
@@ -89,8 +90,8 @@ export function applyBuildPreset(platform: WeaponPlatform, preset: BuildPreset):
   }
 
   const selections = sanitizeSelections(platform, preset.selections);
-  for (const [slot, id] of Object.entries(preset.selections) as [Slot, string][]) {
-    if (selections[slot] !== id) {
+  for (const [slot, id] of Object.entries(preset.selections)) {
+    if (!isSlot(slot) || selections[slot] !== id) {
       warnings.push(`${id} was removed because it is no longer compatible with ${platform.name}.`);
     }
   }

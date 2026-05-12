@@ -30,9 +30,9 @@ Use `coverage.notes` whenever coverage is not exact. The note should explain the
 
 ## Remote Media
 
-Official Gray Zone Warfare Steam media is referenced remotely through `assetManifest.remote.gameMedia`. Current policy is to keep those assets remote unless a future ingestion step stores reviewed local copies with attribution.
+Official Gray Zone Warfare Steam media is referenced remotely through `assetManifest.remote.gameMedia`. Policy is to keep those assets remote unless a future ingestion step stores reviewed local copies with attribution and source/terms notes.
 
-Remote media still needs attribution. It should not be copied into `public/assets/` without a deliberate manifest update and a source/terms review.
+Remote media still needs attribution. Source provenance confirms where the URL came from; it does not grant permission to redistribute the media. Steam media should not be copied into `public/assets/` without a deliberate manifest update and a source/terms review.
 
 ## Attribution Requirements
 
@@ -44,17 +44,17 @@ Each asset attribution must capture:
 - terms or license note,
 - optional implementation notes.
 
-For Fandom-derived renders, the current project note is that community content is generally CC-BY-SA unless otherwise noted, while Gray Zone Warfare game artwork remains owned by MADFINGER Games.
+For Fandom-derived renders, the project note should say that Fandom pages may include CC-BY-SA community content, but embedded game artwork or screenshots may have separate rights. Gray Zone Warfare game artwork remains owned by MADFINGER Games.
 
 ## Validation
 
 Run:
 
 ```bash
-npm run validate:assets
+npm run verify
 ```
 
-The validator fails for incomplete local entries and missing files. It warns for coverage gaps and unmanifested public image files. Warnings are allowed for v1 because the catalog intentionally has broader part coverage than reviewed local art.
+`npm run verify` runs the asset validator and tests. The asset validator fails for incomplete local entries and missing files. It warns for coverage gaps and unmanifested public image files. Warnings are allowed for v1 because the catalog intentionally has broader part coverage than reviewed local art.
 
 ## Known Limitations
 
@@ -64,4 +64,3 @@ The validator fails for incomplete local entries and missing files. It warns for
 - Remote Steam URLs may change because they are external store media links.
 - The manifest documents provenance but does not grant additional rights beyond the source terms.
 - The current validator checks manifest consistency; it does not verify license status automatically.
-

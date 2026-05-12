@@ -69,10 +69,10 @@ price: { amount: 790, currency: "USD" }
 Unlocks are also optional. Use:
 
 ```ts
-unlock: { vendor: "Gunny", level: 2, task: "Close-quarters supply chain" }
+unlock: { vendor: "Gunny", level: 2 }
 ```
 
-Vendor strings on parts can include loyalty level when that is the clearest display value, such as `Gunny LL2`. The structured `unlock` object is preferred when known.
+Vendor strings on parts can include loyalty level when that is the clearest display value, such as `Gunny LL2`. Add a task name only when it is verified against a source.
 
 ## Visual And Asset Follow-Up
 
@@ -89,4 +89,3 @@ After editing catalog or asset data, run:
 npm run validate:assets
 npm run build
 ```
-

@@ -43,6 +43,22 @@ describe("build presets", () => {
     }
   });
 
+  it("generates compatible presets for every platform and intent", () => {
+    for (const platform of platforms) {
+      const presets = generateBuildPresets(platform);
+
+      expect(presets).toHaveLength(4);
+      for (const preset of presets) {
+        expect(preset.platformId).toBe(platform.id);
+        for (const [slot, id] of Object.entries(preset.selections)) {
+          const part = id ? findPart(id) : undefined;
+          expect(part?.slot).toBe(slot);
+          expect(part && checkAvailability(platform, part, preset.selections).available).toBe(true);
+        }
+      }
+    }
+  });
+
   it("loads stale presets, applies sanitizer warnings, and saves newest first", () => {
     const storage = new MemoryStorage();
     const stalePreset: BuildPreset = {
@@ -73,6 +89,25 @@ describe("build presets", () => {
     );
     expect(saved.map((preset) => preset.id)).toEqual(["fresh", "stale"]);
     expect(saved[0].createdAt).toBe("2026-05-09T12:30:00.000Z");
+  });
+
+  it("drops unknown selection keys from stale presets before reading them as slots", () => {
+    const stalePreset = {
+      id: "unknown-slot",
+      name: "Unknown Slot",
+      platformId: "m4a1",
+      selections: {
+        barrel: "m4-145-barrel",
+        staleSlot: "stanag-30",
+      },
+    } as BuildPreset;
+
+    const applied = applyBuildPreset(m4, stalePreset);
+
+    expect(applied.preset.selections).toEqual({ barrel: "m4-145-barrel" });
+    expect(applied.warnings).toEqual([
+      "stanag-30 was removed because it is no longer compatible with M4A1.",
+    ]);
   });
 });
 

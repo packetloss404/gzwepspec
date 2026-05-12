@@ -1,5 +1,6 @@
-import { statDirection, statLabels, type Part, type StatKey, type Stats, type WeaponPlatform } from "../data/armory";
+import { slotLabels, slotOrder, statDirection, statLabels, type Part, type StatKey, type WeaponPlatform } from "../data/armory";
 import { getSelectedParts, totalStats, type BuildSelections } from "../lib/build";
+import { formatSigned, statKeys } from "../lib/formatting";
 
 export type PriceCatalog = Partial<Record<string, number>>;
 
@@ -11,13 +12,15 @@ type Props = {
   className?: string;
 };
 
-const statKeys: StatKey[] = ["accuracy", "recoil", "ads", "ergonomics", "weight", "velocity"];
-
 export function BuildSummary({ platform, selections, priceCatalog = {}, currency = "$", className }: Props) {
   const selectedParts = getSelectedParts(selections);
   const stats = totalStats(platform, selections);
   const vendors = summarizeVendors(platform, selectedParts, priceCatalog);
   const price = summarizePrice(selectedParts, priceCatalog);
+  const slots = summarizeSlots(platform, selections);
+  const deltas = statKeys.map((key) => ({ key, delta: stats[key] - platform.baseStats[key] }));
+  const primaryWin = [...deltas].sort((a, b) => statScore(b.key, b.delta) - statScore(a.key, a.delta))[0];
+  const primaryTradeoff = [...deltas].sort((a, b) => statScore(a.key, a.delta) - statScore(b.key, b.delta))[0];
 
   return (
     <section className={["build-summary", className].filter(Boolean).join(" ")} aria-label="Build summary">
@@ -26,8 +29,13 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
           <span>{platform.family}</span>
           <h2>{platform.name}</h2>
         </div>
-        <strong>{price.knownCount ? formatCurrency(price.total, currency) : "Price pending"}</strong>
+        <strong>{price.knownCount ? formatCurrency(price.total, currency) : "No price data"}</strong>
       </header>
+
+      <div className="build-summary__status" data-complete={slots.ready}>
+        <span>{slots.ready ? "Workbench ready" : `${slots.missingRequired.length} required slot${slots.missingRequired.length === 1 ? "" : "s"} open`}</span>
+        <strong>{slots.filled}/{slots.total} mounted</strong>
+      </div>
 
       <dl className="build-summary__facts">
         <div>
@@ -39,12 +47,21 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
           <dd>{selectedParts.length}</dd>
         </div>
         <div>
-          <dt>Known prices</dt>
+          <dt>Priced parts</dt>
           <dd>
             {price.knownCount}/{selectedParts.length}
           </dd>
         </div>
       </dl>
+
+      <div className="build-summary__scorecards" aria-label="Build highlights">
+        <SummaryCard label="Best gain" statKey={primaryWin.key} delta={primaryWin.delta} />
+        <SummaryCard label="Tradeoff" statKey={primaryTradeoff.key} delta={primaryTradeoff.delta} />
+        <div>
+          <span>Required</span>
+          <strong>{slots.ready ? "Complete" : slots.missingRequired.map((slot) => slotLabels[slot]).join(", ")}</strong>
+        </div>
+      </div>
 
       <div className="build-summary__stats">
         {statKeys.map((key) => (
@@ -64,17 +81,58 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
   );
 }
 
+function SummaryCard({ label, statKey, delta }: { label: string; statKey: StatKey; delta: number }) {
+  const improved = isImproved(statKey, delta);
+
+  return (
+    <div>
+      <span>{label}</span>
+      <strong data-tone={improved ? "good" : "bad"}>
+        {statLabels[statKey]} {formatSigned(delta)}
+      </strong>
+    </div>
+  );
+}
+
 function StatDelta({ statKey, base, value }: { statKey: StatKey; base: number; value: number }) {
   const delta = value - base;
-  const improved = statDirection[statKey] === "higher" ? delta >= 0 : delta <= 0;
+  const improved = isImproved(statKey, delta);
+  const max = statKey === "weight" ? 8 : statKey === "ads" ? 520 : statKey === "velocity" ? 950 : 100;
+  const position = Math.max(4, Math.min(100, (value / max) * 100));
 
   return (
     <div className="build-summary__stat">
-      <span>{statLabels[statKey]}</span>
+      <span>
+        {statLabels[statKey]}
+        <em data-tone={improved ? "good" : "bad"}>{formatSigned(delta)}</em>
+      </span>
       <strong>{formatStat(value, statKey)}</strong>
-      <em data-tone={improved ? "good" : "bad"}>{signed(delta)}</em>
+      <i aria-hidden="true">
+        <b style={{ width: `${position}%` }} />
+      </i>
     </div>
   );
+}
+
+function summarizeSlots(platform: WeaponPlatform, selections: BuildSelections) {
+  const relevantSlots = slotOrder.filter((slot) => platform.requiredSlots.includes(slot) || platform.optionalSlots.includes(slot));
+  const missingRequired = platform.requiredSlots.filter((slot) => !selections[slot]);
+
+  return {
+    filled: relevantSlots.filter((slot) => Boolean(selections[slot])).length,
+    total: relevantSlots.length,
+    missingRequired,
+    ready: missingRequired.length === 0,
+  };
+}
+
+function statScore(statKey: StatKey, delta: number) {
+  const normalized = statKey === "weight" ? delta * 10 : statKey === "ads" ? delta / 5 : statKey === "velocity" ? delta / 8 : delta;
+  return statDirection[statKey] === "higher" ? normalized : -normalized;
+}
+
+function isImproved(statKey: StatKey, delta: number) {
+  return statDirection[statKey] === "higher" ? delta >= 0 : delta <= 0;
 }
 
 function summarizeVendors(platform: WeaponPlatform, selectedParts: Part[], priceCatalog: PriceCatalog) {
@@ -108,15 +166,6 @@ function summarizePrice(selectedParts: Part[], priceCatalog: PriceCatalog) {
 
 function formatStat(value: number, statKey: StatKey) {
   return statKey === "weight" ? value.toFixed(2) : Math.round(value).toString();
-}
-
-function signed(value: number) {
-  if (value === 0) {
-    return "0";
-  }
-
-  const normalized = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-  return value > 0 ? `+${normalized}` : normalized;
 }
 
 function formatCurrency(value: number, currency: string) {

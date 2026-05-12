@@ -1,4 +1,7 @@
 import { emptyStats, parts, slotLabels, type Part, type Slot, type StatKey, type Stats, type WeaponPlatform } from "../data/armory";
+import { formatTag } from "./formatting";
+
+export { formatTag } from "./formatting";
 
 export type BuildSelections = Partial<Record<Slot, string>>;
 
@@ -135,10 +138,6 @@ function roundStat(value: number, key: StatKey) {
   return Math.round(value);
 }
 
-export function formatTag(tag: string) {
-  return tagNames[tag] ?? tag.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function formatTagList(tags: string[]) {
   return tags.map(formatTag).join(" or ");
 }
@@ -172,51 +171,6 @@ function partMatchesConflict(part: Part, conflict: string) {
   return part.id === conflict || part.tags.includes(conflict) || Boolean(part.provides?.includes(conflict));
 }
 
-function isSlot(value: string): value is Slot {
+export function isSlot(value: string): value is Slot {
   return Object.prototype.hasOwnProperty.call(slotLabels, value);
 }
-
-const tagNames: Record<string, string> = {
-  ak: "AK-pattern",
-  ak74: "AK-74",
-  akm: "AKM",
-  ar15: "AR-15",
-  bolt_action: "bolt-action",
-  buffer_tube: "AR buffer tube",
-  carry_handle_channel: "carry-handle optic channel",
-  cylinder_bore: "cylinder-bore shotgun barrel",
-  dovetail: "AK side dovetail",
-  gas_carbine: "carbine-length AR gas system",
-  gas_midlength: "midlength AR gas system",
-  gas_rifle: "rifle-length AR gas system",
-  glock: "Glock-pattern",
-  m_lok_3: "3 o'clock M-LOK slot",
-  m_lok_6: "6 o'clock M-LOK slot",
-  m_lok_9: "9 o'clock M-LOK slot",
-  nato556: "5.56 NATO chambering",
-  nato762: "7.62 NATO chambering",
-  nine_mm: "9 mm chambering",
-  offset_light_mount: "offset scout light mount",
-  pistol_rail: "pistol accessory rail",
-  pump12: "12 ga pump platform",
-  rm437_plate: "micro-dot slide plate",
-  rmr_plate: "RMR slide plate",
-  roller9: "roller-delayed 9 mm",
-  russian545: "5.45x39 chambering",
-  russian762: "7.62x39 chambering",
-  short_action: "short-action receiver",
-  side_picatinny: "side Picatinny rail",
-  sks: "SKS",
-  sks_dovetail: "SKS side rail",
-  smg: "SMG platform",
-  twelve_gauge: "12 gauge chambering",
-  threaded_choke: "threaded shotgun choke",
-  thread_14x1lh: "14x1 LH muzzle thread",
-  thread_1_2x28: "1/2x28 muzzle thread",
-  thread_24x1_5: "24x1.5 muzzle thread",
-  thread_5_8x24: "5/8x24 muzzle thread",
-  thread_pistol_9mm: "threaded 9 mm pistol barrel",
-  tri_lug_9mm: "9 mm tri-lug muzzle",
-  upper_picatinny: "top Picatinny rail",
-  vityaz: "Vityaz-pattern",
-};

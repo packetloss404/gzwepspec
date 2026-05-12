@@ -50,6 +50,27 @@ describe("build sharing", () => {
     }
   });
 
+  it("drops unknown selection keys without indexing sanitized selections as a slot", () => {
+    const code = makeShareCode({
+      version: 1,
+      platformId: "m4a1",
+      selections: {
+        barrel: "m4-145-barrel",
+        staleSlot: "stanag-30",
+      },
+    });
+
+    const decoded = decodeBuildShare(code);
+
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) {
+      expect(decoded.selections).toEqual({ barrel: "m4-145-barrel" });
+      expect(decoded.warnings).toEqual([
+        "stanag-30 in staleSlot was removed because it is not compatible with M4A1.",
+      ]);
+    }
+  });
+
   it("encodes only sanitized selections", () => {
     const decoded = decodeBuildShare(encodeBuildShare(m4, { barrel: "m4-145-barrel", optic: "rmr-dot" }));
 

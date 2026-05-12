@@ -46,6 +46,7 @@ export type AssetManifest = {
   policy: {
     localPathRoot: "public";
     preferManifestLookups: true;
+    placeholderStrategy: string;
     remoteGameMediaStrategy: string;
   };
 };
@@ -54,7 +55,8 @@ const wikiAttribution: AssetAttribution = {
   source: "Gray Zone Warfare Wiki on Fandom",
   sourceUrl: "https://gray-zone-warfare.fandom.com/",
   owner: "MADFINGER Games",
-  terms: "Fandom community content is generally CC-BY-SA unless otherwise noted; game artwork remains owned by MADFINGER Games.",
+  terms:
+    "Fandom pages may include CC-BY-SA community content, but embedded game artwork or screenshots may have separate rights; game artwork remains owned by MADFINGER Games.",
   notes: "Local prototype copies are used to avoid runtime dependency on Fandom CDN URLs.",
 };
 
@@ -62,7 +64,7 @@ const steamAttribution: AssetAttribution = {
   source: "Official Gray Zone Warfare Steam store media",
   sourceUrl: "https://store.steampowered.com/app/2479810/Gray_Zone_Warfare/",
   owner: "MADFINGER Games",
-  terms: "Official store media; referenced remotely rather than redistributed locally.",
+  terms: "Official store media referenced remotely as provenance; this is not permission to redistribute the media locally.",
 };
 
 export const assetManifest = {
@@ -325,8 +327,10 @@ export const assetManifest = {
   policy: {
     localPathRoot: "public",
     preferManifestLookups: true,
+    placeholderStrategy:
+      "Use procedural CSS/SVG-style placeholders for missing art; do not add unreviewed screenshots or copyrighted renders.",
     remoteGameMediaStrategy:
-      "Keep official Steam media remote unless a future asset ingestion step stores reviewed local copies with attribution.",
+      "Keep official Steam media remote unless a future asset ingestion step stores reviewed local copies with attribution and source/terms notes.",
   },
 } as const satisfies AssetManifest;
 
@@ -336,6 +340,7 @@ export type GameMediaAssetKey = keyof typeof assetManifest.remote.gameMedia;
 
 const weaponAssetById: Record<string, LocalAssetEntry & { category: "weapon" }> = assetManifest.local.weapons;
 const partAssetById: Record<string, LocalAssetEntry & { category: "part" }> = assetManifest.local.parts;
+const gameMediaAssetById: Record<string, GameMediaEntry> = assetManifest.remote.gameMedia;
 const weaponAssets = Object.values(weaponAssetById);
 const partAssets = Object.values(partAssetById);
 
@@ -370,4 +375,10 @@ export function getAssetForArmoryId(category: LocalAssetCategory, armoryId: stri
 
 export function getAssetSrcForArmoryId(category: LocalAssetCategory, armoryId: string): string | undefined {
   return getAssetForArmoryId(category, armoryId)?.src;
+}
+
+export function getGameMediaAsset(id: GameMediaAssetKey): (typeof assetManifest.remote.gameMedia)[GameMediaAssetKey];
+export function getGameMediaAsset(id: string): GameMediaEntry | undefined;
+export function getGameMediaAsset(id: string): GameMediaEntry | undefined {
+  return gameMediaAssetById[id];
 }

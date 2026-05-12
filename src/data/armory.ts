@@ -153,7 +153,7 @@ export const platforms: WeaponPlatform[] = [
     caliber: "5.56x45 NATO",
     role: "CQB carbine",
     vendor: "Gunny",
-    unlock: { vendor: "Gunny", level: 2, task: "Close-quarters supply chain" },
+    unlock: { vendor: "Gunny", level: 2 },
     price: { amount: 940, currency: "USD" },
     skins: [
       { id: "factory-black", name: "Factory Black", color: "#252b2d", material: "anodized" },
@@ -189,7 +189,7 @@ export const platforms: WeaponPlatform[] = [
     caliber: "5.45x39",
     role: "Controllable patrol rifle",
     vendor: "Artisan",
-    unlock: { vendor: "Artisan", level: 2, task: "Eastern bloc logistics" },
+    unlock: { vendor: "Artisan", level: 2 },
     price: { amount: 690, currency: "USD" },
     skins: [
       { id: "black-polymer", name: "Black Polymer", color: "#25282b", material: "polymer" },
@@ -207,7 +207,7 @@ export const platforms: WeaponPlatform[] = [
     caliber: "9x19",
     role: "Suppressed compound sweeper",
     vendor: "Turncoat",
-    unlock: { vendor: "Turncoat", level: 2, task: "Local security cache" },
+    unlock: { vendor: "Turncoat", level: 2 },
     price: { amount: 560, currency: "USD" },
     skins: [
       { id: "matte-black", name: "Matte Black", color: "#1f2426", material: "phosphate" },
@@ -243,7 +243,7 @@ export const platforms: WeaponPlatform[] = [
     caliber: "7.62x51 NATO",
     role: "Precision hunting rifle",
     vendor: "Gunny",
-    unlock: { vendor: "Gunny", level: 2, task: "Long-line overwatch" },
+    unlock: { vendor: "Gunny", level: 2 },
     price: { amount: 860, currency: "USD" },
     skins: [
       { id: "matte-parkerized", name: "Matte Parkerized", color: "#2c302f", material: "phosphate" },
@@ -261,7 +261,7 @@ export const platforms: WeaponPlatform[] = [
     caliber: "9x19",
     role: "Compact room-clearing SMG",
     vendor: "Banshee",
-    unlock: { vendor: "Banshee", level: 2, task: "Quiet entry tools" },
+    unlock: { vendor: "Banshee", level: 2 },
     price: { amount: 610, currency: "USD" },
     skins: [
       { id: "black-nitride", name: "Black Nitride", color: "#1c2023", material: "phosphate" },
@@ -765,7 +765,7 @@ export const parts: Part[] = [
     provides: ["thread_1_2x28", "gas_rifle", "precision_barrel"],
     stats: { ergonomics: -6, recoil: -6, accuracy: 9, weight: 0.62, velocity: 95, ads: 46 },
     color: "#454d48",
-    unlock: { vendor: "Gunny", level: 3, task: "Marksman supply line" },
+    unlock: { vendor: "Gunny", level: 3 },
     price: { amount: 390, currency: "USD" },
   },
   {
@@ -1052,7 +1052,7 @@ export const parts: Part[] = [
     stats: { ergonomics: 7, recoil: -8, accuracy: 4, weight: 0.98, ads: 22 },
     notes: "Adds accessory rails to a bolt-action platform.",
     color: "#4b514b",
-    unlock: { vendor: "Gunny", level: 3, task: "Precision rig contract" },
+    unlock: { vendor: "Gunny", level: 3 },
     price: { amount: 460, currency: "USD" },
   },
   {
@@ -1247,7 +1247,7 @@ export const parts: Part[] = [
     requires: ["tri_lug_9mm", "nine_mm"],
     stats: { ergonomics: -4, recoil: -6, accuracy: 2, weight: 0.36, velocity: -6, ads: 27 },
     color: "#1a1f21",
-    unlock: { vendor: "Banshee", level: 3, task: "Suppressed entry package" },
+    unlock: { vendor: "Banshee", level: 3 },
     price: { amount: 575, currency: "USD" },
   },
   {
@@ -1273,7 +1273,7 @@ export const parts: Part[] = [
     requires: ["thread_5_8x24", "nato762"],
     stats: { ergonomics: -7, recoil: -10, accuracy: 6, weight: 0.68, velocity: 8, ads: 55 },
     color: "#222728",
-    unlock: { vendor: "Gunny", level: 3, task: "Overwatch procurement" },
+    unlock: { vendor: "Gunny", level: 3 },
     price: { amount: 690, currency: "USD" },
   },
   {

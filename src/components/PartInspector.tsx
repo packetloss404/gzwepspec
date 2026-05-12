@@ -1,6 +1,7 @@
-import { CircleOff, ShieldCheck } from "lucide-react";
+import { CheckCircle2, CircleOff, Eraser, ShieldCheck, Wrench } from "lucide-react";
 import { parts, slotLabels, statDirection, statLabels, type Part, type StatKey, type WeaponPlatform } from "../data/armory";
 import { checkAvailability, statDelta, type BuildSelections } from "../lib/build";
+import { formatSigned, formatTag, statKeys } from "../lib/formatting";
 import type { PriceCatalog } from "./BuildSummary";
 
 type Props = {
@@ -15,8 +16,6 @@ type Props = {
   onApply?: (part: Part) => void;
   onClearSlot?: (slot: Part["slot"]) => void;
 };
-
-const statKeys: StatKey[] = ["accuracy", "recoil", "ads", "ergonomics", "weight", "velocity"];
 
 export function PartInspector({
   platform,
@@ -33,16 +32,20 @@ export function PartInspector({
   if (!part) {
     return (
       <aside className={["part-inspector", className].filter(Boolean).join(" ")} aria-label="Part inspector">
-        <p>Select a part to inspect vendor, compatibility, and stat deltas.</p>
+        <div className="part-inspector__empty">
+          <Wrench size={18} />
+          <p>Select a part to inspect fit and stat changes.</p>
+        </div>
       </aside>
     );
   }
 
   const availability = checkAvailability(platform, part, selections);
-  const canApply = availability.available && !vendorLocked;
+  const canApply = availability.available;
   const active = selections[part.slot] === part.id;
   const installedPart = selections[part.slot] ? parts.find((candidate) => candidate.id === selections[part.slot]) ?? null : null;
   const price = priceCatalog[part.id];
+  const statusLabel = active ? "Installed" : vendorLocked ? "Higher loyalty listing" : availability.available ? "Ready to mount" : "Blocked";
 
   return (
     <aside className={["part-inspector", className].filter(Boolean).join(" ")} aria-label={`${part.name} inspector`}>
@@ -51,7 +54,7 @@ export function PartInspector({
           <span>{slotLabels[part.slot]}</span>
           <h2>{part.name}</h2>
         </div>
-        <strong>{price === undefined ? "Price pending" : `${currency}${price.toLocaleString()}`}</strong>
+        <strong>{price === undefined ? "No price data" : `${currency}${price.toLocaleString()}`}</strong>
       </header>
 
       <dl className="part-inspector__facts">
@@ -65,19 +68,27 @@ export function PartInspector({
         </div>
         <div>
           <dt>Status</dt>
-          <dd>{vendorLocked ? "Vendor locked" : availability.available ? "Compatible" : "Locked"}</dd>
+          <dd>{statusLabel}</dd>
         </div>
       </dl>
 
-      <div className="part-inspector__compatibility" data-compatible={canApply}>
-        {canApply ? <ShieldCheck size={15} /> : <CircleOff size={15} />}
-        <span>{canApply ? `Fits ${platform.name}` : lockHint ?? availability.reasons[0] ?? `Does not fit ${platform.name}`}</span>
+      <div className="part-inspector__compatibility" data-compatible={canApply || active}>
+        {active ? <CheckCircle2 size={15} /> : canApply ? <ShieldCheck size={15} /> : <CircleOff size={15} />}
+        <span>{active ? `Mounted on ${slotLabels[part.slot]}` : canApply ? lockHint ?? `Fits ${platform.name}` : availability.reasons[0] ?? `Does not fit ${platform.name}`}</span>
       </div>
 
       {!active && installedPart && (
         <div className="part-inspector__swap">
           <span>Compare vs {installedPart.name}</span>
           <strong>{canApply ? "Ready to apply" : nextActionLabel(availability.reasons[0], lockHint)}</strong>
+        </div>
+      )}
+
+      {!canApply && !active && (lockHint || availability.reasons.length > 0) && (
+        <div className="part-inspector__warnings" role="status">
+          {(lockHint ? [lockHint] : availability.reasons).slice(0, 3).map((reason) => (
+            <span key={reason}>{reason}</span>
+          ))}
         </div>
       )}
 
@@ -105,10 +116,12 @@ export function PartInspector({
 
       <div className="part-inspector__actions">
         <button type="button" disabled={!canApply || active || !onApply} onClick={() => onApply?.(part)}>
-          {active ? "Installed" : "Apply"}
+          {active ? <CheckCircle2 size={13} /> : <Wrench size={13} />}
+          {active ? "Installed" : installedPart ? "Apply swap" : "Mount part"}
         </button>
         {active && (
           <button type="button" disabled={!onClearSlot} onClick={() => onClearSlot?.(part.slot)}>
+            <Eraser size={13} />
             Clear slot
           </button>
         )}
@@ -118,28 +131,18 @@ export function PartInspector({
 }
 
 function PartStatDelta({ part, installedPart, statKey }: { part: Part; installedPart: Part | null; statKey: StatKey }) {
-  const delta = statDelta(part, statKey) - (installedPart && installedPart.id !== part.id ? statDelta(installedPart, statKey) : 0);
+  const current = installedPart && installedPart.id !== part.id ? statDelta(installedPart, statKey) : 0;
+  const next = statDelta(part, statKey);
+  const delta = next - current;
   const improved = statDirection[statKey] === "higher" ? delta >= 0 : delta <= 0;
 
   return (
     <div className="part-inspector__stat">
       <span>{statLabels[statKey]}</span>
-      <strong data-tone={improved ? "good" : "bad"}>{signed(delta)}</strong>
+      <strong data-tone={improved ? "good" : "bad"}>{formatSigned(delta)}</strong>
+      {installedPart && installedPart.id !== part.id && <small>{formatSigned(current)} to {formatSigned(next)}</small>}
     </div>
   );
-}
-
-function signed(value: number) {
-  if (value === 0) {
-    return "0";
-  }
-
-  const normalized = Number.isInteger(value) ? value.toString() : value.toFixed(2);
-  return value > 0 ? `+${normalized}` : normalized;
-}
-
-function formatTag(tag: string) {
-  return tag.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function nextActionLabel(reason?: string, lockHint?: string) {
