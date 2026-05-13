@@ -22,12 +22,16 @@ WepSpec is not a game asset pack. Do not extract, upload, or redistribute packag
 ```bash
 npm install
 npm run dev
+npm test
+npm run verify
 npm run validate:assets
 npm run build
 npm run preview
 ```
 
 - `npm run dev` starts Vite on `http://127.0.0.1:5173`.
+- `npm test` runs the Vitest catalog, share, asset-manifest, and preview-profile checks.
+- `npm run verify` runs asset validation and the full test suite.
 - `npm run validate:assets` checks local files against `src/data/assetManifest.ts`.
 - `npm run build` runs asset validation, TypeScript project build, and Vite production build.
 - `npm run preview` serves the production build locally.
@@ -51,6 +55,8 @@ npm run preview
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Changelog](CHANGELOG.md)
+- [Backlog](BACKLOG.md)
 - [Catalog Authoring](docs/catalog-authoring.md)
 - [Asset Provenance](docs/assets.md)
 - [Art Pipeline](docs/art-pipeline.md)
@@ -63,6 +69,8 @@ npm run preview
 ## v1 Direction
 
 The v1 line should keep the app useful as a focused build planner rather than a full game database. Priorities are stable compatibility behavior, a documented catalog format, honest provenance, and a shippable UI for building, inspecting, sharing, and validating weapon configurations.
+
+The current working backlog lives in [BACKLOG.md](BACKLOG.md). Keep release history in [CHANGELOG.md](CHANGELOG.md) as changes land.
 
 ## Community-Informed Recommendations
 
