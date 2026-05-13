@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   BadgeCheck,
   ChevronDown,
   CircleOff,
@@ -9,6 +10,7 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
+  Wrench,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import packageJson from "../package.json";
@@ -29,7 +31,7 @@ import {
   type WeaponPlatform,
 } from "./data/armory";
 import { gameAssets, partRenders } from "./data/gameAssets";
-import { partRenderAssetsByPartId } from "./data/assetManifest";
+import { partRenderAssetsByPartId, weaponRenderAssetsByPlatform, weaponRenderSrcByPlatform } from "./data/assetManifest";
 import {
   checkAvailability,
   compatibleParts,
@@ -90,6 +92,7 @@ function App() {
   const [vendorFilter, setVendorFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [sortMode, setSortMode] = useState<SortMode>("relevance");
+  const [lastAppliedPartId, setLastAppliedPartId] = useState<string | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const priceCatalog = useMemo<PriceCatalog>(() => {
@@ -112,6 +115,41 @@ function App() {
 
     return { total: rows.length, compatible, earlyVendor };
   }, [activeSlot, platform, selections]);
+  const inspectedAvailability = useMemo(
+    () => inspectedPart ? checkAvailability(platform, inspectedPart, selections) : null,
+    [inspectedPart, platform, selections],
+  );
+  const inspectedInstalled = Boolean(inspectedPart && selections[inspectedPart.slot] === inspectedPart.id);
+  const previewPart = inspectedPart && !inspectedInstalled && inspectedAvailability?.available ? inspectedPart : null;
+  const previewParts = useMemo(() => {
+    if (!previewPart) {
+      return selectedParts;
+    }
+
+    return [...selectedParts.filter((part) => part.slot !== previewPart.slot), previewPart];
+  }, [previewPart, selectedParts]);
+  const inspectedSlotInstalledPart = inspectedPart
+    ? selectedParts.find((part) => part.slot === inspectedPart.slot) ?? null
+    : null;
+  const activeSlotInstalledPart = selectedParts.find((part) => part.slot === activeSlot) ?? null;
+  const workbenchState = inspectedInstalled ? "installed" : previewPart ? "preview" : inspectedPart ? "blocked" : "empty";
+  const previewStatusLabel = previewPart
+    ? inspectedSlotInstalledPart
+      ? `Previewing ${previewPart.name} over ${inspectedSlotInstalledPart.name}`
+      : `Previewing ${previewPart.name}`
+    : inspectedInstalled && inspectedPart
+      ? `${inspectedPart.name} is installed`
+      : inspectedPart
+        ? inspectedAvailability?.reasons[0] ?? `${inspectedPart.name} is blocked`
+        : `Focused on ${slotLabels[activeSlot]}`;
+  const activeFilterCount = [
+    currentSlotOnly,
+    compatibleOnly,
+    hideLocked,
+    vendorFilter !== "all",
+    levelFilter !== "all",
+    query.trim().length > 0,
+  ].filter(Boolean).length;
   const lockerParts = useMemo(() => {
     const rows = parts
       .filter((part) => availableSlots.includes(part.slot))
@@ -213,16 +251,23 @@ function App() {
   }, [settingsOpen]);
 
   function choosePart(part: Part) {
+    const availability = checkAvailability(platform, part, selections);
     chooseBuildPart(part);
+    if (availability.available) {
+      setLastAppliedPartId(part.id);
+      setShareStatus(`${part.name} mounted`, []);
+    }
   }
 
   function clearSlot(slot: Slot) {
     clearBuildSlot(slot);
+    setLastAppliedPartId(null);
   }
 
   function selectPlatform(nextPlatformId: string) {
     selectBuildPlatform(nextPlatformId);
     setBuildWarnings([]);
+    setLastAppliedPartId(null);
   }
 
   function saveCurrentBuild(name: string) {
@@ -238,6 +283,7 @@ function App() {
     loadBuild(targetPlatform, result.preset.selections, result.warnings[0] ?? `${preset.name} applied`, result.warnings);
     setShareCode(encodeBuildShare(targetPlatform, result.preset.selections));
     setBuildWarnings(result.warnings);
+    setLastAppliedPartId(null);
   }
 
   function deleteSavedBuild(presetId: string) {
@@ -258,22 +304,32 @@ function App() {
     setShareCode(encodeBuildShare(decoded.platform, decoded.selections));
     setBuildWarnings(decoded.warnings);
     setImportCode("");
+    setLastAppliedPartId(null);
   }
 
   function applyIntent(intent: BuildPresetGoal) {
     applyPresetIntent(intent);
     setBuildWarnings([]);
+    setLastAppliedPartId(null);
   }
 
   async function copyShareLink() {
-    const copiedShareCode = await copyBuildShareLink();
-    setShareCode(copiedShareCode);
-    setShareCopied(true);
-    setBuildWarnings([]);
+    try {
+      const copiedShareCode = await copyBuildShareLink();
+      setShareCode(copiedShareCode);
+      setShareCopied(true);
+      setBuildWarnings([]);
+    } catch {
+      const warning = "Clipboard access was blocked. Use the share code field instead.";
+      setShareCopied(false);
+      setBuildWarnings([warning]);
+      setShareStatus(warning, [warning]);
+    }
   }
 
   function scrollToSection(sectionId: string) {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
   }
 
   return (
@@ -335,6 +391,10 @@ function App() {
         </div>
       )}
 
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {shareStatus || previewStatusLabel}
+      </div>
+
       <section className="inventory-layout">
         <aside id="weapon-panel" className="weapon-window glass">
           <div className="window-head">
@@ -347,10 +407,14 @@ function App() {
           <div className="weapon-scene">
             <WeaponPreview
               platform={platform}
-              selectedParts={selectedParts}
+              selectedParts={previewParts}
               activeSlot={activeSlot}
               onSlotFocus={focusSlot}
             />
+            <div className="preview-handoff" data-previewing={Boolean(previewPart)}>
+              <span>{previewPart ? "Previewing swap" : "Active slot"}</span>
+              <strong>{previewPart ? previewPart.name : activeSlotInstalledPart?.name ?? slotLabels[activeSlot]}</strong>
+            </div>
           </div>
 
           <div className="weapon-ammo">
@@ -360,7 +424,18 @@ function App() {
 
           <div className="installed-assets" aria-label="Installed weapon parts">
             {selectedParts.slice(0, 8).map((part) => (
-              <button key={part.id} type="button" aria-label={`Focus installed ${slotLabels[part.slot]}: ${part.name}`} onClick={() => focusSlot(part.slot)}>
+              <button
+                key={part.id}
+                className={[
+                  part.slot === activeSlot ? "active" : "",
+                  inspectedPart?.id === part.id ? "inspected" : "",
+                  lastAppliedPartId === part.id ? "recent" : "",
+                ].filter(Boolean).join(" ")}
+                type="button"
+                aria-pressed={part.slot === activeSlot}
+                aria-label={`Focus installed ${slotLabels[part.slot]}: ${part.name}${lastAppliedPartId === part.id ? ", recently mounted" : ""}`}
+                onClick={() => focusSlot(part.slot)}
+              >
                 {partRenderAssetsByPartId[part.id] || partRenders[part.id] ? (
                   <AssetImage asset={partRenderAssetsByPartId[part.id]} src={partRenders[part.id]} alt="" fallback={<i style={{ background: part.color ?? "#39423c" }} />} />
                 ) : (
@@ -399,6 +474,8 @@ function App() {
                 <button
                   key={slot}
                   className={activeSlot === slot ? "attachment-slot active" : "attachment-slot"}
+                  data-previewing={previewPart?.slot === slot}
+                  data-filled={Boolean(selected)}
                   type="button"
                   aria-pressed={activeSlot === slot}
                   aria-label={`${slotLabels[slot]} slot, ${selected ? selected.name : `${count} compatible parts`}`}
@@ -406,7 +483,7 @@ function App() {
                 >
                   <span>{formatSlotCode(slot)}</span>
                   <strong>{selected ? itemAbbrev(selected.name) : "+"}</strong>
-                  <small>{selected ? selected.type : `${count} fit`}</small>
+                  <small>{previewPart?.slot === slot ? `Preview: ${itemAbbrev(previewPart.name)}` : selected ? selected.type : `${count} fit`}</small>
                 </button>
               );
             })}
@@ -422,15 +499,15 @@ function App() {
             <div>
               <PanelTitle label="Parts Locker" />
               <span>
-                {slotLabels[activeSlot]}: {activeSlotSummary.compatible} fit / {activeSlotSummary.earlyVendor} LL1
+                {slotLabels[activeSlot]} focus: {activeSlotSummary.compatible} fit / {activeSlotSummary.earlyVendor} early listings
               </span>
             </div>
-            <strong>{lockerParts.length} shown</strong>
+            <strong>{lockerParts.length} shown{activeFilterCount ? ` / ${activeFilterCount} filters` : ""}</strong>
           </div>
 
           <a className="official-card" href={gameAssets.storeUrl} target="_blank" rel="noreferrer">
-            <AssetImage src={gameAssets.header} alt="Gray Zone Warfare official Steam header" />
-            <span>Official Steam media</span>
+            <AssetImage src={gameAssets.header} alt="Gray Zone Warfare Steam store header" />
+            <span>Steam store media</span>
           </a>
 
           <div className="platform-grid">
@@ -447,6 +524,13 @@ function App() {
                   aria-label={`${item.name}, ${item.caliber}, ${platformVendorLabel(item)}, ${finishCount} finishes listed`}
                   onClick={() => selectPlatform(item.id)}
                 >
+                  <AssetImage
+                    className="weapon-tile__render"
+                    asset={weaponRenderAssetsByPlatform[item.id]}
+                    src={weaponRenderSrcByPlatform[item.id]}
+                    alt=""
+                    fallback={null}
+                  />
                   <Crosshair size={15} />
                   <span>{item.name}</span>
                   <small>{item.caliber}</small>
@@ -485,11 +569,11 @@ function App() {
             <button
               className={currentSlotOnly ? "active" : ""}
               type="button"
-              aria-label={`Show only ${slotLabels[activeSlot]} parts`}
+              aria-label={currentSlotOnly ? `Showing only ${slotLabels[activeSlot]} parts` : "Showing all attachment slots"}
               aria-pressed={currentSlotOnly}
               onClick={() => setCurrentSlotOnly((enabled) => !enabled)}
             >
-              {formatSlotCode(activeSlot)}
+              {currentSlotOnly ? `${formatSlotCode(activeSlot)} only` : "All slots"}
             </button>
             <button
               className={compatibleOnly ? "active" : ""}
@@ -503,11 +587,11 @@ function App() {
             <button
               className={hideLocked ? "active" : ""}
               type="button"
-              aria-label="Show only LL1 parts"
+              aria-label="Hide higher-loyalty listings"
               aria-pressed={hideLocked}
               onClick={() => setHideLocked((enabled) => !enabled)}
             >
-              LL1
+              Early LL
             </button>
             <label>
               <select aria-label="Filter vendor" value={vendorFilter} onChange={(event) => setVendorFilter(event.target.value)}>
@@ -552,6 +636,8 @@ function App() {
                   part={part}
                   active={selections[part.slot] === part.id}
                   inspected={inspectedPart?.id === part.id}
+                  previewing={previewPart?.id === part.id}
+                  recentlyApplied={lastAppliedPartId === part.id}
                   available={availability.available}
                   traderLocked={isHigherLoyalty(part)}
                   reason={availability.reasons[0] ?? loyaltyHint(part)}
@@ -587,6 +673,35 @@ function App() {
       <section id="build-workbench" className="bench glass">
         <div className="bench-head">
           <PanelTitle label="Build Workbench" icon={<SlidersHorizontal size={15} />} />
+          <div className="swap-flow" data-state={workbenchState} role="status" aria-live="polite">
+            <span>{inspectedPart ? slotLabels[inspectedPart.slot] : slotLabels[activeSlot]}</span>
+            <strong>
+              {inspectedPart
+                ? inspectedInstalled
+                  ? "Installed part selected"
+                  : previewPart
+                    ? inspectedSlotInstalledPart
+                      ? `Compare vs ${itemAbbrev(inspectedSlotInstalledPart.name)}`
+                      : "Ready to mount"
+                    : inspectedAvailability?.reasons[0] ?? "Inspect a compatible part"
+                : "Pick a part to compare"}
+            </strong>
+          </div>
+          {previewPart && (
+            <button
+              className="bench-head__primary"
+              type="button"
+              aria-label={`Mount previewed ${previewPart.name}`}
+              onClick={() => choosePart(previewPart)}
+            >
+              <Wrench size={13} /> Mount preview
+            </button>
+          )}
+          {inspectedPart && !previewPart && !inspectedInstalled && inspectedAvailability && (
+            <span className="bench-head__warning" role="status">
+              <AlertTriangle size={13} /> {inspectedAvailability.reasons[0] ?? "Blocked"}
+            </span>
+          )}
           <button type="button" onClick={copyShareLink}>
             <Copy size={13} /> Share build
           </button>
@@ -605,6 +720,7 @@ function App() {
             priceCatalog={priceCatalog}
             vendorLocked={inspectedPart ? isHigherLoyalty(inspectedPart) : false}
             lockHint={inspectedPart ? loyaltyHint(inspectedPart) : undefined}
+            className={previewPart ? "is-previewing" : inspectedInstalled ? "is-installed" : undefined}
             onApply={choosePart}
             onClearSlot={clearSlot}
           />
@@ -647,6 +763,8 @@ function StashItem({
   part,
   active,
   inspected,
+  previewing,
+  recentlyApplied,
   available,
   traderLocked,
   reason,
@@ -655,6 +773,8 @@ function StashItem({
   part: Part;
   active: boolean;
   inspected: boolean;
+  previewing: boolean;
+  recentlyApplied: boolean;
   available: boolean;
   traderLocked: boolean;
   reason?: string;
@@ -663,16 +783,16 @@ function StashItem({
   const locked = !available;
   const level = loyaltyLevel(part) ?? 1;
   const price = part.price?.amount;
-  const status = active ? "Installed" : traderLocked ? `LL${level}` : available ? "Fits" : "Blocked";
+  const status = active ? "Installed" : recentlyApplied ? "Mounted" : previewing ? "Preview" : traderLocked ? `LL${level}` : available ? "Fits" : "Blocked";
   const statusIcon = !available ? <CircleOff size={13} /> : <BadgeCheck size={13} />;
 
   return (
     <button
-      className={`stash-item ${active ? "active" : ""} ${inspected ? "inspected" : ""} ${locked ? "locked" : ""}`}
+      className={`stash-item ${active ? "active" : ""} ${inspected ? "inspected" : ""} ${previewing ? "previewing" : ""} ${recentlyApplied ? "recent" : ""} ${locked ? "locked" : ""}`}
       title={locked ? reason : traderLocked ? reason ?? part.name : part.name}
       type="button"
       aria-pressed={active}
-      aria-label={`${part.name}, ${slotLabels[part.slot]}, ${locked ? reason ?? "blocked" : traderLocked ? reason ?? `LL${level}` : deltaPreview(part)}`}
+      aria-label={`${part.name}, ${slotLabels[part.slot]}, ${previewing ? "previewing in weapon view" : locked ? reason ?? "blocked" : traderLocked ? reason ?? `LL${level}` : deltaPreview(part)}`}
       onClick={onClick}
     >
       <span className="stash-item__slot">{formatSlotCode(part.slot)}</span>
@@ -682,7 +802,7 @@ function StashItem({
         asset={{ category: "part", armoryId: part.id }}
         src={partRenders[part.id]}
         alt=""
-        fallback={<span className="asset-image-fallback__mark">No art</span>}
+        fallback={null}
         fallbackLabel={`${part.name} reviewed art pending`}
       />
       <strong>{itemAbbrev(part.name)}</strong>

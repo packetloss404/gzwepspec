@@ -4,12 +4,13 @@ WepSpec uses manifest-backed asset attribution. The canonical per-asset inventor
 
 ## Local Prototype Renders
 
-Weapon and part inspect renders stored in this folder were gathered from the Gray Zone Warfare Wiki on Fandom for prototype display.
+Weapon and part inspect renders stored in this folder were gathered from public Gray Zone Warfare Wiki pages on Fandom for prototype display. They should be treated as rights-sensitive review material, not as a reusable asset pack.
 
 - Source: https://gray-zone-warfare.fandom.com/
 - Fandom pages may include community content under CC-BY-SA, but that does not by itself confirm rights for embedded game artwork or screenshots.
 - Gray Zone Warfare and its game artwork belong to MADFINGER Games.
 - Local copies are used for prototype UI rendering reliability instead of hotlinking Fandom CDN image URLs.
+- Do not extract, upload, or redistribute packaged Gray Zone Warfare game files through this project.
 
 ## Remote Official Media
 
@@ -38,5 +39,6 @@ Files without manifest entries should be treated as incomplete and should not sh
 - The current asset set is incomplete and supports prototype display only.
 - Some part renders are representative or shared across multiple catalog items.
 - The manifest records provenance but does not automatically verify license status.
+- Public releases should replace, remove, or explicitly rights-review local copied renders before distribution.
 - Community wiki pages and CDN URLs can change over time.
 - Missing catalog art should fall back to procedural preview shapes until reviewed assets are available.

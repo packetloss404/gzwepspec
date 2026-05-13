@@ -93,6 +93,18 @@ button {
   box-shadow: 0 0 0 4px rgba(207, 186, 91, 0.18);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .game-shell {
   position: relative;
   min-height: 100vh;
@@ -450,10 +462,10 @@ button {
 
 .inventory-layout {
   display: grid;
-  grid-template-columns: minmax(520px, 0.92fr) minmax(620px, 1.08fr);
-  gap: 14px;
+  grid-template-columns: minmax(470px, 0.84fr) minmax(640px, 1.16fr);
+  gap: 10px;
   align-items: start;
-  padding-top: 14px;
+  padding-top: 10px;
 }
 
 .inventory-layout > *,
@@ -541,20 +553,21 @@ button {
 }
 
 .locker {
-  padding: 11px;
+  padding: 9px;
 }
 
 .weapon-scene {
   position: relative;
-  height: 410px;
-  margin: 9px;
-  border: 1px solid var(--line);
+  height: clamp(318px, 34vw, 390px);
+  margin: 8px;
+  border: 1px solid rgba(224, 226, 209, 0.12);
   background:
-    linear-gradient(rgba(190, 192, 178, 0.052) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(190, 192, 178, 0.052) 1px, transparent 1px),
-    rgba(5, 7, 6, 0.78);
-  background-size: 30px 30px, 30px 30px, auto;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42);
+    linear-gradient(rgba(190, 192, 178, 0.036) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(190, 192, 178, 0.034) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 55%, rgba(100, 112, 91, 0.12), transparent 58%),
+    rgba(5, 7, 6, 0.76);
+  background-size: 36px 36px, 36px 36px, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.34);
   overflow: hidden;
 }
 
@@ -567,17 +580,17 @@ button {
 }
 
 .weapon-scene::before {
-  inset: 10px;
-  border: 1px solid rgba(214, 185, 90, 0.16);
-  clip-path: polygon(0 0, 70px 0, 70px 1px, 1px 1px, 1px 42px, 0 42px, 0 0, 100% 0, 100% 42px, calc(100% - 1px) 42px, calc(100% - 1px) 1px, calc(100% - 70px) 1px, calc(100% - 70px) 0);
+  inset: 8px;
+  border: 1px solid rgba(214, 185, 90, 0.1);
+  clip-path: polygon(0 0, 52px 0, 52px 1px, 1px 1px, 1px 34px, 0 34px, 0 0, 100% 0, 100% 34px, calc(100% - 1px) 34px, calc(100% - 1px) 1px, calc(100% - 52px) 1px, calc(100% - 52px) 0);
 }
 
 .weapon-scene::after {
   left: 0;
   right: 0;
-  top: 46%;
+  top: 48%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(214, 185, 90, 0.26), transparent);
+  background: linear-gradient(90deg, transparent, rgba(214, 185, 90, 0.16), transparent);
 }
 
 .weapon-scene .weapon-preview {
@@ -593,15 +606,53 @@ button {
 
 .weapon-scene .weapon-preview__meta {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
   z-index: 40;
   border-radius: 0;
-  border-color: rgba(214, 185, 90, 0.25);
+  border-color: rgba(214, 185, 90, 0.18);
   background:
-    linear-gradient(90deg, rgba(214, 185, 90, 0.14), transparent 36%),
-    rgba(4, 6, 5, 0.7);
+    linear-gradient(90deg, rgba(214, 185, 90, 0.09), transparent 34%),
+    rgba(4, 6, 5, 0.62);
+}
+
+.preview-handoff {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 42;
+  display: grid;
+  max-width: min(280px, calc(100% - 24px));
+  padding: 7px 9px;
+  border: 1px solid rgba(214, 185, 90, 0.28);
+  background:
+    linear-gradient(90deg, rgba(214, 185, 90, 0.16), transparent),
+    rgba(5, 7, 6, 0.78);
+  box-shadow: var(--shadow-tight), var(--inset-bevel);
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.preview-handoff[data-previewing="true"] {
+  border-color: rgba(129, 185, 173, 0.62);
+  background:
+    linear-gradient(90deg, rgba(129, 185, 173, 0.18), rgba(214, 185, 90, 0.08)),
+    rgba(5, 7, 6, 0.82);
+}
+
+.preview-handoff span {
+  color: var(--muted);
+  font-size: 0.56rem;
+  font-weight: 900;
+}
+
+.preview-handoff strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weapon-scene canvas {
@@ -613,9 +664,9 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 12px 9px;
+  padding: 0 10px 7px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
 }
 
@@ -634,35 +685,57 @@ button {
 .installed-assets {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 5px;
-  margin: 0 10px 9px;
+  gap: 4px;
+  margin: 0 8px 8px;
 }
 
 .installed-assets button {
   position: relative;
   display: grid;
   place-items: center;
-  height: 60px;
-  padding: 4px;
-  border: 1px solid var(--line);
+  height: 46px;
+  padding: 4px 5px 10px;
+  border: 1px solid rgba(224, 226, 209, 0.12);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent),
-    rgba(25, 29, 25, 0.72);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.042), transparent 55%),
+    rgba(18, 22, 19, 0.76);
   cursor: pointer;
   box-shadow: var(--inset-bevel);
   overflow: hidden;
 }
 
 .installed-assets button:not(:disabled):hover {
-  border-color: rgba(214, 185, 90, 0.48);
+  border-color: rgba(214, 185, 90, 0.4);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    rgba(43, 40, 27, 0.78);
+}
+
+.installed-assets button.active,
+.installed-assets button.inspected {
+  border-color: var(--line-hot);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
-    rgba(47, 45, 31, 0.82);
+    rgba(76, 66, 26, 0.74);
+  box-shadow: inset 0 0 0 1px rgba(214, 185, 90, 0.24), inset 0 -2px 0 rgba(214, 185, 90, 0.76), var(--inset-bevel);
+}
+
+.installed-assets button.recent::after {
+  content: "NEW";
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  padding: 2px 4px;
+  border: 1px solid rgba(148, 207, 120, 0.36);
+  background: rgba(41, 54, 34, 0.72);
+  color: #d6e5cc;
+  font-size: 0.54rem;
+  font-weight: 950;
 }
 
 .installed-assets button:disabled {
   cursor: default;
-  opacity: 0.44;
+  opacity: 0.32;
 }
 
 .installed-assets img {
@@ -674,27 +747,30 @@ button {
 
 .installed-assets i {
   display: block;
-  width: 46px;
-  height: 18px;
+  width: min(42px, 72%);
+  height: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transform: skewX(-16deg);
 }
 
 .installed-assets span {
   position: absolute;
-  left: 4px;
+  right: 3px;
   bottom: 3px;
-  padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.58);
-  color: rgba(240, 241, 232, 0.78);
-  font-size: 0.6rem;
+  left: 3px;
+  padding: 1px 3px;
+  background: rgba(0, 0, 0, 0.42);
+  color: rgba(240, 241, 232, 0.66);
+  font-size: 0.54rem;
   font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .stat-table {
   display: grid;
   gap: 1px;
-  margin: 0 10px;
+  margin: 0 8px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.035);
@@ -704,9 +780,9 @@ button {
   display: grid;
   grid-template-columns: 1fr 72px 44px;
   align-items: center;
-  min-height: 29px;
+  min-height: 26px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 42%),
     rgba(0, 0, 0, 0.16);
@@ -752,8 +828,8 @@ button {
 .mode-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 10px;
+  gap: 3px;
+  padding: 8px;
 }
 
 .mode-row button,
@@ -784,18 +860,18 @@ button {
 .attachment-strip {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 4px;
-  padding: 0 10px 10px;
+  gap: 3px;
+  padding: 0 8px 8px;
 }
 
 .attachment-slot {
   position: relative;
-  min-height: 64px;
-  padding: 5px;
-  border: 1px solid var(--line);
+  min-height: 54px;
+  padding: 5px 6px;
+  border: 1px solid rgba(224, 226, 209, 0.13);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
-    rgba(42, 46, 40, 0.58);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.044), transparent),
+    rgba(28, 33, 29, 0.66);
   cursor: pointer;
   text-align: left;
   box-shadow: var(--inset-bevel);
@@ -807,7 +883,7 @@ button {
   position: absolute;
   left: 0;
   top: 0;
-  width: 3px;
+  width: 2px;
   height: 100%;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -815,9 +891,25 @@ button {
 .attachment-slot.active {
   border-color: var(--line-hot);
   background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.062), transparent),
+    rgba(62, 54, 28, 0.66);
+  box-shadow: inset 2px 0 0 rgba(214, 185, 90, 0.78), var(--inset-bevel);
+}
+
+.attachment-slot[data-filled="true"]::after {
+  background: rgba(148, 207, 120, 0.52);
+}
+
+.attachment-slot[data-previewing="true"] {
+  border-color: rgba(129, 185, 173, 0.7);
+  background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
-    rgba(76, 66, 26, 0.68);
-  box-shadow: inset 3px 0 0 rgba(214, 185, 90, 0.86), var(--inset-bevel);
+    rgba(34, 65, 59, 0.66);
+  box-shadow: inset 2px 0 0 rgba(129, 185, 173, 0.82), var(--inset-bevel);
+}
+
+.attachment-slot[data-previewing="true"] small {
+  color: #bde7dd;
 }
 
 .attachment-slot span,
@@ -826,26 +918,26 @@ button {
 .weapon-tile small {
   display: block;
   color: var(--muted);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .attachment-slot strong {
   display: block;
-  min-height: 21px;
-  margin: 4px 0;
+  min-height: 17px;
+  margin: 3px 0 2px;
   overflow: hidden;
   color: #f5f3e5;
-  font-size: 0.69rem;
+  font-size: 0.66rem;
   line-height: 1.05;
 }
 
 .weapon-copy {
   margin: 0;
-  padding: 0 10px 12px;
+  padding: 0 8px 10px;
   color: #8d9388;
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   line-height: 1.35;
 }
 
@@ -875,7 +967,7 @@ button {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  margin-bottom: 9px;
+  margin-bottom: 7px;
 }
 
 .locker-head > div {
@@ -892,24 +984,24 @@ button {
 
 .locker-head strong {
   color: #e9e1ba;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  text-shadow: 0 0 14px rgba(214, 185, 90, 0.2);
+  text-shadow: 0 0 10px rgba(214, 185, 90, 0.16);
 }
 
 .platform-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
-  gap: 6px;
-  margin-bottom: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 5px;
+  margin-bottom: 8px;
 }
 
 .official-card {
   position: relative;
   display: block;
-  margin-bottom: 9px;
-  border: 1px solid var(--line);
+  margin-bottom: 8px;
+  border: 1px solid rgba(224, 226, 209, 0.12);
   background: rgba(5, 7, 6, 0.78);
   color: var(--text);
   text-decoration: none;
@@ -943,7 +1035,7 @@ button {
 .official-card img {
   display: block;
   width: 100%;
-  height: 100px;
+  height: 82px;
   object-fit: cover;
   object-position: center;
   filter: saturate(0.88) brightness(0.76) contrast(1.08);
@@ -952,7 +1044,7 @@ button {
 
 .official-card .asset-image-fallback {
   width: 100%;
-  height: 100px;
+  height: 82px;
   border: 0;
 }
 
@@ -977,16 +1069,16 @@ button {
 
 .weapon-tile {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
   column-gap: 8px;
   align-items: center;
-  min-height: 64px;
-  padding: 8px;
-  border: 1px solid var(--line);
+  min-height: 68px;
+  padding: 7px;
+  border: 1px solid rgba(224, 226, 209, 0.13);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
-    rgba(20, 24, 22, 0.68);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.042), transparent),
+    rgba(18, 22, 20, 0.7);
   cursor: pointer;
   text-align: left;
   box-shadow: var(--inset-bevel);
@@ -995,9 +1087,9 @@ button {
 .weapon-tile.active {
   border-color: var(--line-hot);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
-    rgba(65, 56, 31, 0.78);
-  box-shadow: inset 3px 0 0 rgba(214, 185, 90, 0.88), var(--inset-bevel);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.064), transparent),
+    rgba(55, 48, 28, 0.74);
+  box-shadow: inset 2px 0 0 rgba(214, 185, 90, 0.82), var(--inset-bevel);
 }
 
 .weapon-tile.locked:not(.active) {
@@ -1007,13 +1099,37 @@ button {
 }
 
 .weapon-tile svg {
-  grid-row: 1 / 4;
+  position: absolute;
+  left: 9px;
+  top: 8px;
   color: var(--gold);
+  opacity: 0.62;
+}
+
+.weapon-tile__render {
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1 / 5;
+  width: 58px;
+  height: 42px;
+  object-fit: contain;
+  align-self: center;
+  justify-self: center;
+  background: transparent;
+  filter:
+    drop-shadow(0 8px 6px rgba(0, 0, 0, 0.62))
+    saturate(0.82)
+    contrast(1.06);
+}
+
+.weapon-tile .asset-image-fallback.weapon-tile__render {
+  display: none;
 }
 
 .weapon-tile span {
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 900;
 }
 
@@ -1024,7 +1140,7 @@ button {
   overflow: hidden;
   color: var(--muted);
   font-style: normal;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 850;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -1037,17 +1153,17 @@ button {
 }
 
 .weapon-tile b {
-  grid-column: 3;
-  grid-row: 1 / 4;
-  align-self: end;
+  grid-column: 2;
+  grid-row: 4;
+  align-self: start;
   color: #d9d0a0;
 }
 
 .locker-tools {
   display: grid;
-  grid-template-columns: 132px 1fr;
-  gap: 7px;
-  margin-bottom: 8px;
+  grid-template-columns: 126px 1fr;
+  gap: 5px;
+  margin-bottom: 6px;
 }
 
 .slot-select {
@@ -1082,9 +1198,9 @@ button {
 .stash-search {
   display: flex;
   align-items: center;
-  gap: 7px;
-  height: 34px;
-  padding: 0 8px;
+  gap: 6px;
+  height: 32px;
+  padding: 0 7px;
   border: 1px solid var(--line);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
@@ -1105,26 +1221,26 @@ button {
   outline: 0;
   background: transparent;
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
 .locker-filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 6px;
-  margin-bottom: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 5px;
+  margin-bottom: 8px;
 }
 
 .locker-filters button,
 .locker-filters label {
   min-width: 0;
-  min-height: 34px;
-  border: 1px solid var(--line);
+  min-height: 32px;
+  border: 1px solid rgba(224, 226, 209, 0.13);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     rgba(24, 28, 24, 0.78);
   color: #dedfd4;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 850;
   text-transform: uppercase;
   box-shadow: var(--inset-bevel);
@@ -1141,6 +1257,18 @@ button {
     rgba(76, 66, 26, 0.68);
   color: #fff;
   box-shadow: inset 0 -2px 0 rgba(214, 185, 90, 0.76), var(--inset-bevel);
+}
+
+.locker-filters button.active::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(214, 185, 90, 0.78);
+  transform: rotate(45deg);
+  vertical-align: 1px;
 }
 
 .locker-filters label {
@@ -1186,23 +1314,25 @@ button {
 
 .stash-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   grid-auto-rows: minmax(88px, auto);
-  gap: 6px;
+  gap: 5px;
 }
 
 .stash-item {
   position: relative;
   display: grid;
-  grid-template-rows: 15px 28px auto auto;
-  align-content: stretch;
-  justify-items: center;
-  gap: 2px;
-  padding: 5px;
-  border: 1px solid var(--line);
+  grid-template-columns: 62px minmax(0, 1fr);
+  grid-template-rows: minmax(25px, auto) auto auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-height: 88px;
+  padding: 18px 8px 8px;
+  border: 1px solid rgba(224, 226, 209, 0.13);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.058), transparent),
-    rgba(22, 26, 23, 0.76);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.044), transparent 52%),
+    rgba(19, 23, 21, 0.78);
   cursor: pointer;
   box-shadow: var(--inset-bevel);
   overflow: hidden;
@@ -1211,10 +1341,11 @@ button {
 .stash-item::before {
   content: "";
   position: absolute;
-  inset: 5px 8px auto;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.095), transparent 70%);
+  inset: 24px auto auto 8px;
+  width: 62px;
+  height: 34px;
+  border-radius: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.06), transparent 68%);
 }
 
 .stash-item::after {
@@ -1228,33 +1359,47 @@ button {
 .stash-item:hover,
 .attachment-slot:hover,
 .weapon-tile:hover {
-  border-color: rgba(235, 235, 222, 0.42);
+  border-color: rgba(235, 235, 222, 0.34);
   transform: translateY(-1px);
 }
 
 .stash-item.active {
   border-color: var(--line-hot);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
-    rgba(62, 54, 27, 0.76);
-  box-shadow: inset 0 0 0 1px rgba(205, 176, 79, 0.24), inset 0 -2px 0 rgba(214, 185, 90, 0.76);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.056), transparent),
+    rgba(52, 46, 27, 0.72);
+  box-shadow: inset 2px 0 0 rgba(214, 185, 90, 0.78), var(--inset-bevel);
 }
 
 .stash-item.inspected:not(.active) {
-  border-color: rgba(235, 235, 222, 0.34);
+  border-color: rgba(129, 185, 173, 0.62);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
-    rgba(33, 38, 34, 0.84);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
+    rgba(28, 48, 44, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(129, 185, 173, 0.18), inset 0 -2px 0 rgba(129, 185, 173, 0.6);
+}
+
+.stash-item.previewing:not(.active) {
+  border-color: rgba(129, 185, 173, 0.84);
+}
+
+.stash-item.recent {
+  box-shadow: inset 0 0 0 1px rgba(148, 207, 120, 0.24), inset 0 -2px 0 rgba(148, 207, 120, 0.72);
+}
+
+.stash-item.previewing .stash-item__status {
+  color: #bde7dd;
 }
 
 .stash-item.locked {
   cursor: pointer;
-  opacity: 0.72;
+  opacity: 0.66;
 }
 
 .stash-item i {
-  grid-row: 2;
-  width: 34px;
+  grid-column: 1;
+  grid-row: 1 / 4;
+  width: 54px;
   height: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   transform: skewX(-16deg);
@@ -1263,11 +1408,12 @@ button {
 .stash-item img {
   position: relative;
   z-index: 1;
-  grid-row: 2;
-  width: 58px;
-  height: 28px;
+  grid-column: 1;
+  grid-row: 1 / 4;
+  width: 62px;
+  height: 42px;
   object-fit: contain;
-  filter: drop-shadow(0 7px 6px rgba(0, 0, 0, 0.62)) saturate(0.94);
+  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.58)) saturate(0.9);
 }
 
 .stash-item .asset-image-fallback {
@@ -1281,15 +1427,17 @@ button {
 .stash-item strong {
   position: relative;
   z-index: 1;
-  grid-row: 3;
+  grid-column: 2;
+  grid-row: 1;
   width: 100%;
-  overflow: hidden;
   color: #f4f1dd;
-  font-size: 0.62rem;
-  line-height: 1;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.68rem;
+  line-height: 1.12;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .stash-item small,
@@ -1298,24 +1446,27 @@ button {
   z-index: 1;
   width: 100%;
   overflow: hidden;
-  text-align: center;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .stash-item small {
-  grid-row: 4;
-  min-height: 12px;
+  grid-column: 2;
+  grid-row: 2;
+  min-height: 13px;
   color: rgba(235, 235, 222, 0.68);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .stash-item em {
-  display: none;
-  color: rgba(235, 235, 222, 0.72);
-  font-size: 0.62rem;
+  display: block;
+  grid-column: 2;
+  grid-row: 3;
+  color: rgba(235, 235, 222, 0.76);
+  font-size: 0.57rem;
   font-style: normal;
   font-weight: 850;
 }
@@ -1328,10 +1479,10 @@ button {
   display: inline-flex;
   align-items: center;
   min-height: 14px;
-  padding: 2px 3px;
+  padding: 2px 4px;
   background: rgba(0, 0, 0, 0.46);
   color: rgba(235, 235, 222, 0.76);
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 950;
   line-height: 1;
   text-transform: uppercase;
@@ -1343,8 +1494,13 @@ button {
 
 .stash-item__status {
   right: 5px;
-  gap: 3px;
+  gap: 2px;
   color: var(--green);
+}
+
+.stash-item__status svg {
+  width: 10px;
+  height: 10px;
 }
 
 .stash-item.locked .stash-item__status {
@@ -1353,6 +1509,11 @@ button {
 
 .stash-item.locked small {
   color: #e1a08f;
+}
+
+.stash-item.locked strong,
+.stash-item.locked em {
+  color: rgba(235, 235, 222, 0.72);
 }
 
 .stash-null {
@@ -1407,11 +1568,91 @@ button {
   flex-wrap: wrap;
 }
 
+.swap-flow {
+  display: grid;
+  align-content: center;
+  min-height: 34px;
+  min-width: min(240px, 100%);
+  margin-left: auto;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(5, 7, 6, 0.42);
+  text-align: right;
+  text-transform: uppercase;
+  box-shadow: var(--inset-bevel);
+}
+
+.swap-flow[data-state="preview"] {
+  border-color: rgba(129, 185, 173, 0.48);
+  background:
+    linear-gradient(90deg, rgba(129, 185, 173, 0.14), transparent),
+    rgba(18, 36, 33, 0.58);
+}
+
+.swap-flow[data-state="blocked"] {
+  border-color: rgba(208, 113, 87, 0.34);
+  background:
+    linear-gradient(90deg, rgba(208, 113, 87, 0.12), transparent),
+    rgba(75, 29, 22, 0.38);
+}
+
+.swap-flow span {
+  color: var(--muted);
+  font-size: 0.56rem;
+  font-weight: 900;
+}
+
+.swap-flow strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bench-head button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
+}
+
+.bench-head .bench-head__primary {
+  border-color: rgba(129, 185, 173, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), transparent),
+    rgba(24, 48, 43, 0.78);
+  color: #dff5ee;
+}
+
+.bench-head__warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  max-width: min(280px, 100%);
+  padding: 0 9px;
+  border: 1px solid rgba(208, 113, 87, 0.34);
+  background:
+    linear-gradient(90deg, rgba(208, 113, 87, 0.12), transparent),
+    rgba(75, 29, 22, 0.38);
+  color: #f0b19e;
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  box-shadow: var(--inset-bevel);
+}
+
+.bench-head__warning svg {
+  flex: 0 0 auto;
+}
+
+.bench-head__warning {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workbench-grid {
@@ -1429,6 +1670,15 @@ button {
     linear-gradient(180deg, rgba(230, 232, 220, 0.06), transparent 96px),
     rgba(15, 18, 16, 0.78);
   box-shadow: var(--inset-bevel);
+}
+
+.part-inspector.is-previewing {
+  border-color: rgba(129, 185, 173, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(129, 185, 173, 0.12), var(--inset-bevel);
+}
+
+.part-inspector.is-installed {
+  border-color: rgba(214, 185, 90, 0.42);
 }
 
 .build-summary__header,
@@ -2199,11 +2449,11 @@ button {
 
 @media (max-width: 1280px) {
   .inventory-layout {
-    grid-template-columns: minmax(430px, 0.95fr) minmax(480px, 1.05fr);
+    grid-template-columns: minmax(420px, 0.9fr) minmax(520px, 1.1fr);
   }
 
   .stash-grid {
-    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
   }
 }
 
@@ -2274,7 +2524,7 @@ button {
   }
 
   .weapon-scene {
-    height: clamp(240px, 52vw, 320px);
+    height: clamp(250px, 52vw, 330px);
   }
 
   .weapon-scene .weapon-preview__meta {
@@ -2288,7 +2538,7 @@ button {
   }
 
   .installed-assets button {
-    height: 52px;
+    height: 46px;
   }
 
   .attachment-strip {
@@ -2316,12 +2566,12 @@ button {
   }
 
   .platform-grid {
-    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
   }
 
   .stash-grid {
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    grid-auto-rows: minmax(82px, auto);
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+    grid-auto-rows: minmax(76px, auto);
   }
 
   .workbench-grid {
@@ -2387,19 +2637,19 @@ button {
   }
 
   .attachment-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .attachment-slot {
-    min-height: 68px;
+    min-height: 52px;
   }
 
   .platform-grid {
-    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
   }
 
   .stash-grid {
-    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   }
 
   .bench-head {
@@ -2410,7 +2660,14 @@ button {
     flex: 1 0 100%;
   }
 
-  .bench-head button {
+  .swap-flow {
+    flex: 1 1 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .bench-head button,
+  .bench-head__warning {
     flex: 1 1 140px;
     justify-content: center;
   }
@@ -2430,5 +2687,26 @@ button {
 @media (pointer: coarse) {
   :where(button, input, select, textarea) {
     min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .stash-item:hover,
+  .attachment-slot:hover,
+  .weapon-tile:hover,
+  .official-card:hover img {
+    transform: none;
   }
 }

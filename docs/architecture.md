@@ -49,15 +49,15 @@ Decoding rejects unknown versions, unknown platforms, malformed selections, and 
 
 ## Validation
 
-`npm run build` runs `npm run validate:assets` through `prebuild`. The validator imports the TypeScript asset manifest and catalog, then checks:
+`npm run verify` runs `npm run validate:assets` and the Vitest suite. `npm run build` runs TypeScript project checks and the Vite production build. The asset validator imports the TypeScript asset manifest and catalog, then checks:
 
 - required manifest fields,
 - local source paths under `/assets/`,
 - local file paths under `public/assets/`,
 - missing files,
+- declared PNG/WebP MIME types against file extensions and image headers,
 - duplicate asset ids and duplicate coverage ids,
 - platform and part coverage gaps,
 - public image files missing from the manifest.
 
 Coverage gaps are currently warnings because the catalog intentionally has more parts than local images.
-

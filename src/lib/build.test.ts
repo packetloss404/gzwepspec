@@ -4,6 +4,8 @@ import { checkAvailability, isSlot, sanitizeSelections, totalStats, type BuildSe
 import { formatSigned, formatSlotCode, formatTag, statKeys } from "./formatting";
 
 const m4 = platforms.find((platform) => platform.id === "m4a1")!;
+const ak74 = platforms.find((platform) => platform.id === "ak74n")!;
+const vityaz = platforms.find((platform) => platform.id === "vityaz")!;
 
 const addedParts: Part[] = [];
 
@@ -51,6 +53,24 @@ describe("slot validation and formatting", () => {
 });
 
 describe("checkAvailability", () => {
+  it("requires muzzle threads from a selected barrel instead of the bare platform", () => {
+    const flashHider = parts.find((part) => part.id === "a2-flash")!;
+    const suppressor = parts.find((part) => part.id === "pistol-can")!;
+    const glock = platforms.find((platform) => platform.id === "glock17")!;
+
+    expect(checkAvailability(m4, flashHider, {}).available).toBe(false);
+    expect(checkAvailability(m4, flashHider, { barrel: "m4-145-barrel" }).available).toBe(true);
+    expect(checkAvailability(glock, suppressor, {}).available).toBe(false);
+    expect(checkAvailability(glock, suppressor, { barrel: "g17-threaded-barrel" }).available).toBe(true);
+  });
+
+  it("does not treat all AK-family magazines as cross-caliber compatible", () => {
+    const akmMagazine = parts.find((part) => part.id === "ak-30")!;
+
+    expect(checkAvailability(ak74, akmMagazine, {}).available).toBe(false);
+    expect(checkAvailability(vityaz, akmMagazine, {}).available).toBe(false);
+  });
+
   it("matches platformTags against the platform identity instead of dynamic selected tags", () => {
     const dynamicOnlyPart = addPart({
       id: "test-dynamic-platform-mag",

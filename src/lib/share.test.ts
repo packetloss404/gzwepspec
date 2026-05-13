@@ -25,6 +25,26 @@ describe("build sharing", () => {
     }
   });
 
+  it("imports a full shared build URL pasted into the code field", () => {
+    const selections = {
+      barrel: "m4-145-barrel",
+      handguard: "m4-classic-hg",
+      stock: "m4-crane-stock",
+      pistolGrip: "a2-grip",
+      magazine: "stanag-30",
+    };
+    const url = createShareUrl("https://example.test/builds?view=workbench", m4, selections);
+
+    const decoded = decodeBuildShare(url);
+
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) {
+      expect(decoded.platform.id).toBe("m4a1");
+      expect(decoded.selections).toEqual(selections);
+      expect(decoded.warnings).toEqual([]);
+    }
+  });
+
   it("decodes stale share payloads and reports sanitizer removals", () => {
     const code = makeShareCode({
       version: 1,

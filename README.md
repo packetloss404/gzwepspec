@@ -2,7 +2,9 @@
 
 WepSpec is a React/Vite prototype for planning Gray Zone Warfare weapon builds. The current preview is a layered 2D armory workbench: a base weapon render sits under slot anchors and compatible part layers, while the surrounding UI shows fit status, stat changes, vendor/pricing hints, share links, and asset provenance.
 
-This project is a fan-made planning aid. It is not affiliated with MADFINGER Games, and the starter catalog should be treated as prototype data until verified against an in-game export or curated source set.
+This project is a fan-made planning aid. It is not affiliated with, endorsed by, or sponsored by MADFINGER Games, Valve, or Steam. The starter catalog should be treated as prototype data until verified against an in-game export or curated source set.
+
+WepSpec is not a game asset pack. Do not extract, upload, or redistribute packaged Gray Zone Warfare game files through this repository. Local preview renders are attribution-tracked prototype UI assets only and should be replaced, removed, or cleared through a rights review before any broad public release.
 
 ## Current Scope
 
@@ -51,6 +53,8 @@ npm run preview
 - [Architecture](docs/architecture.md)
 - [Catalog Authoring](docs/catalog-authoring.md)
 - [Asset Provenance](docs/assets.md)
+- [Art Pipeline](docs/art-pipeline.md)
+- [Publication Readiness](docs/publication-readiness.md)
 - [v1 Release Scope](docs/release-v1.md)
 - [Community Research Notes](docs/community-research.md)
 - [Contributing](CONTRIBUTING.md)
@@ -59,3 +63,15 @@ npm run preview
 ## v1 Direction
 
 The v1 line should keep the app useful as a focused build planner rather than a full game database. Priorities are stable compatibility behavior, a documented catalog format, honest provenance, and a shippable UI for building, inspecting, sharing, and validating weapon configurations.
+
+## Community-Informed Recommendations
+
+Recent community research points WepSpec toward explanation-first planning:
+
+- Make fit failures obvious in player language: missing rail, adapter, mount, base plate, platform family, or blocked slot.
+- Add vendor/reputation planning before chasing full database parity, because players want to know what they can buy or grind toward.
+- Keep share URLs reliable and add lightweight saved-build workflows so players can rebuild and compare configurations quickly.
+- Treat the visual preview as a usability feature: readable contrast, clear selected slots, simple part removal, and mobile-friendly controls.
+- Keep catalog confidence visible. Prices, unlocks, stats, compatibility, and assets should show their prototype/source status until verified after patches.
+
+See [Community Research Notes](docs/community-research.md) and [v1 Release Scope](docs/release-v1.md) for sourced player requests, pain points, debates, and the current roadmap.

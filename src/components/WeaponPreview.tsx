@@ -93,23 +93,40 @@ export function WeaponPreview({ platform, selectedParts, activeSlot, className, 
           );
         })}
 
-        {selectedLayers.map(({ anchor, part }) => (
-          <div
-            key={part.id}
-            className={`weapon-preview__layer${activeSlot === anchor.slot ? " is-active" : ""}`}
-            style={{ ...anchorStyle(anchor), "--part-color": part.color ?? "#3d463f" } as PreviewStyle}
-          >
-            {partRenders[part.id] ? (
-              <img className="weapon-preview__part-art" src={partRenders[part.id]} alt="" draggable={false} />
-            ) : (
-              <span
-                className={`weapon-preview__shape weapon-preview__shape--${anchor.shape}`}
-                style={{ "--part-color": part.color ?? "#3d463f" } as PreviewStyle}
-                aria-hidden="true"
-              />
-            )}
-          </div>
-        ))}
+        {selectedLayers.map(({ anchor, part }) => {
+          const hasPartArt = Boolean(partRenders[part.id]);
+          const isActive = activeSlot === anchor.slot;
+          const layerClassName = [
+            "weapon-preview__layer",
+            `weapon-preview__layer--${anchor.slot}`,
+            hasPartArt ? "has-art" : "is-procedural",
+            isActive ? "is-active" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const shapeClassName = [
+            "weapon-preview__shape",
+            `weapon-preview__shape--${anchor.shape}`,
+            `weapon-preview__shape-slot--${anchor.slot}`,
+          ].join(" ");
+
+          return (
+            <div
+              key={part.id}
+              className={layerClassName}
+              style={{ ...anchorStyle(anchor), "--part-color": part.color ?? "#3d463f" } as PreviewStyle}
+            >
+              {hasPartArt ? (
+                <img className="weapon-preview__part-art" src={partRenders[part.id]} alt="" draggable={false} />
+              ) : (
+                <>
+                  <span className={shapeClassName} style={{ "--part-color": part.color ?? "#3d463f" } as PreviewStyle} aria-hidden="true" />
+                  <span className="weapon-preview__missing-art-label" aria-hidden="true">Proxy</span>
+                </>
+              )}
+            </div>
+          );
+        })}
 
         {anchors.map((anchor) => {
           const part = selectedBySlot.get(anchor.slot);

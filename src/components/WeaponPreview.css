@@ -1,20 +1,20 @@
 .weapon-preview {
-  --preview-accent: #c8f36c;
+  --preview-accent: #a9c46a;
   --preview-amber: #d2b565;
-  --preview-shell: rgba(8, 12, 11, 0.86);
+  --preview-shell: rgba(7, 10, 9, 0.78);
   --preview-stage-bg:
-    linear-gradient(90deg, rgba(225, 239, 193, 0.06) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(225, 239, 193, 0.045) 1px, transparent 1px),
-    radial-gradient(circle at var(--preview-glow-x) var(--preview-glow-y), rgba(203, 239, 119, 0.22), transparent 24%),
-    radial-gradient(ellipse at 50% 62%, rgba(31, 42, 33, 0.62), transparent 58%),
-    linear-gradient(145deg, rgba(19, 25, 23, 0.98), rgba(5, 8, 9, 0.96));
+    linear-gradient(90deg, rgba(225, 239, 193, 0.04) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(225, 239, 193, 0.032) 1px, transparent 1px),
+    radial-gradient(circle at var(--preview-glow-x) var(--preview-glow-y), rgba(182, 220, 112, 0.1), transparent 25%),
+    radial-gradient(ellipse at 50% 62%, rgba(31, 42, 33, 0.48), transparent 58%),
+    linear-gradient(145deg, rgba(18, 23, 21, 0.96), rgba(5, 8, 9, 0.94));
   --preview-stage-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -34px 64px rgba(0, 0, 0, 0.36),
-    inset 0 0 48px rgba(0, 0, 0, 0.38);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -28px 54px rgba(0, 0, 0, 0.3),
+    inset 0 0 42px rgba(0, 0, 0, 0.32);
   position: relative;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   color: #edf3df;
@@ -25,21 +25,21 @@
   overflow: hidden;
   min-height: 220px;
   aspect-ratio: 16 / 9;
-  border: 1px solid rgba(220, 238, 180, 0.18);
-  border-radius: 8px;
+  border: 1px solid rgba(220, 238, 180, 0.1);
+  border-radius: 4px;
   background: var(--preview-stage-bg);
-  background-size: 28px 28px, 28px 28px, auto, auto, auto;
+  background-size: 36px 36px, 36px 36px, auto, auto, auto;
   box-shadow: var(--preview-stage-shadow);
   isolation: isolate;
 }
 
 .weapon-scene .weapon-preview {
   --preview-stage-bg:
-    linear-gradient(90deg, rgba(225, 239, 193, 0.05) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(225, 239, 193, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at var(--preview-glow-x) var(--preview-glow-y), rgba(203, 239, 119, 0.18), transparent 24%),
-    radial-gradient(ellipse at 50% 62%, rgba(31, 42, 33, 0.52), transparent 58%),
-    linear-gradient(145deg, rgba(19, 25, 23, 0.7), rgba(5, 8, 9, 0.5));
+    linear-gradient(90deg, rgba(225, 239, 193, 0.034) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(225, 239, 193, 0.028) 1px, transparent 1px),
+    radial-gradient(circle at var(--preview-glow-x) var(--preview-glow-y), rgba(182, 220, 112, 0.08), transparent 25%),
+    radial-gradient(ellipse at 50% 62%, rgba(31, 42, 33, 0.38), transparent 58%),
+    linear-gradient(145deg, rgba(19, 25, 23, 0.58), rgba(5, 8, 9, 0.46));
 }
 
 .weapon-scene .weapon-preview__stage {
@@ -58,16 +58,16 @@
 
 .weapon-preview__stage::before {
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 12% 88%, rgba(255, 255, 255, 0.04)),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 5px);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.032), transparent 12% 88%, rgba(255, 255, 255, 0.026)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 5px);
   mix-blend-mode: screen;
-  opacity: 0.22;
+  opacity: 0.11;
 }
 
 .weapon-preview__stage::after {
   background:
-    radial-gradient(ellipse at 50% 56%, transparent 42%, rgba(0, 0, 0, 0.42) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 16% 82%, rgba(0, 0, 0, 0.38));
+    radial-gradient(ellipse at 50% 56%, transparent 45%, rgba(0, 0, 0, 0.36) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), transparent 16% 82%, rgba(0, 0, 0, 0.34));
 }
 
 .weapon-preview__beam {
@@ -76,9 +76,9 @@
   right: 7%;
   z-index: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(210, 232, 176, 0.46), transparent);
-  box-shadow: 0 0 18px rgba(199, 243, 108, 0.18);
-  opacity: 0.62;
+  background: linear-gradient(90deg, transparent, rgba(210, 232, 176, 0.2), transparent);
+  box-shadow: 0 0 12px rgba(182, 220, 112, 0.08);
+  opacity: 0.42;
 }
 
 .weapon-preview__beam--top {
@@ -91,7 +91,7 @@
 
 .weapon-preview__base {
   position: absolute;
-  inset: 16% 5% 18%;
+  inset: 12% 4% 17%;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -102,13 +102,13 @@
 .weapon-preview__base::after {
   position: absolute;
   right: 7%;
-  bottom: 15%;
+  bottom: 13%;
   left: 7%;
   z-index: -1;
-  height: 12px;
+  height: 10px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.48);
-  filter: blur(13px);
+  filter: blur(12px);
   content: "";
 }
 
@@ -116,12 +116,12 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0.94;
+  opacity: 0.96;
   filter:
-    drop-shadow(0 26px 22px rgba(0, 0, 0, 0.58))
-    drop-shadow(0 0 18px rgba(214, 236, 164, 0.1))
-    contrast(1.05)
-    saturate(0.92);
+    drop-shadow(0 24px 18px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 8px rgba(214, 236, 164, 0.035))
+    contrast(1.08)
+    saturate(0.86);
 }
 
 .weapon-preview__fallback-weapon {
@@ -310,31 +310,36 @@
 
 .weapon-preview__socket {
   z-index: calc(var(--anchor-layer) + 2);
-  border: 1px dashed rgba(214, 236, 164, 0.24);
-  border-radius: 5px;
+  border: 1px dashed rgba(214, 236, 164, 0.12);
+  border-radius: 3px;
   background:
-    linear-gradient(90deg, transparent 48%, rgba(214, 236, 164, 0.2) 48% 52%, transparent 52%),
-    linear-gradient(0deg, transparent 47%, rgba(214, 236, 164, 0.2) 47% 53%, transparent 53%),
-    rgba(199, 243, 108, 0.025);
-  opacity: 0.5;
+    linear-gradient(90deg, transparent 48%, rgba(214, 236, 164, 0.12) 48% 52%, transparent 52%),
+    linear-gradient(0deg, transparent 47%, rgba(214, 236, 164, 0.12) 47% 53%, transparent 53%),
+    rgba(199, 243, 108, 0.014);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.2);
+  opacity: 0.2;
   pointer-events: none;
 }
 
 .weapon-preview__socket.is-installed {
   border-style: solid;
-  background: rgba(199, 243, 108, 0.035);
-  opacity: 0.18;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.06;
 }
 
 .weapon-preview__socket.is-required:not(.is-installed) {
-  border-color: rgba(210, 181, 101, 0.42);
+  border-color: rgba(210, 181, 101, 0.34);
 }
 
 .weapon-preview__socket.is-active {
-  border-color: rgba(199, 243, 108, 0.78);
-  background: rgba(199, 243, 108, 0.09);
-  box-shadow: 0 0 0 1px rgba(199, 243, 108, 0.14), 0 0 22px rgba(199, 243, 108, 0.22);
-  opacity: 1;
+  border-color: rgba(214, 185, 90, 0.64);
+  background: rgba(214, 185, 90, 0.046);
+  box-shadow:
+    inset 0 0 18px rgba(214, 185, 90, 0.07),
+    0 0 0 1px rgba(214, 185, 90, 0.1),
+    0 0 12px rgba(214, 185, 90, 0.12);
+  opacity: 0.9;
 }
 
 .weapon-preview__layer {
@@ -344,17 +349,31 @@
 
 .weapon-preview__layer::before {
   position: absolute;
-  inset: 8%;
+  inset: 12% 6%;
   z-index: -1;
   border-radius: 999px;
   background: color-mix(in srgb, var(--part-color), transparent 74%);
-  filter: blur(14px);
-  opacity: 0.18;
+  filter: blur(12px);
+  opacity: 0.1;
+  content: "";
+}
+
+.weapon-preview__layer.is-procedural::after {
+  position: absolute;
+  right: 9%;
+  bottom: 4%;
+  left: 9%;
+  z-index: -2;
+  height: 14%;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  filter: blur(7px);
+  opacity: 0.66;
   content: "";
 }
 
 .weapon-preview__layer.is-active::before {
-  opacity: 0.42;
+  opacity: 0.26;
 }
 
 .weapon-preview__part-art {
@@ -362,22 +381,31 @@
   height: 100%;
   object-fit: contain;
   filter:
-    drop-shadow(0 10px 8px rgba(0, 0, 0, 0.54))
-    drop-shadow(0 0 10px color-mix(in srgb, var(--part-color), transparent 72%))
+    drop-shadow(0 8px 7px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--part-color), transparent 78%))
     contrast(1.04);
 }
 
 .weapon-preview__shape {
   position: absolute;
-  inset: 12%;
-  border: 1px solid color-mix(in srgb, var(--part-color), #ffffff 18%);
+  inset: 11%;
+  border: 1px solid color-mix(in srgb, var(--part-color), #ffffff 16%);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--part-color), #ffffff 12%), color-mix(in srgb, var(--part-color), #000000 24%));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 27%),
+    linear-gradient(180deg, color-mix(in srgb, var(--part-color), #ffffff 10%), color-mix(in srgb, var(--part-color), #000000 26%));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -7px 10px rgba(0, 0, 0, 0.18),
-    0 9px 10px rgba(0, 0, 0, 0.38);
+    inset 0 -8px 11px rgba(0, 0, 0, 0.22),
+    0 8px 9px rgba(0, 0, 0, 0.34);
+}
+
+.weapon-preview__layer.is-active .weapon-preview__shape {
+  border-color: color-mix(in srgb, var(--part-color), #f4ffe5 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -8px 11px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(244, 255, 229, 0.2),
+    0 10px 12px rgba(0, 0, 0, 0.42);
 }
 
 .weapon-preview__shape--box,
@@ -474,6 +502,178 @@
   content: "";
 }
 
+.weapon-preview__shape-slot--receiver {
+  inset-block: 17% 22%;
+  border-radius: 4px 7px 5px 4px;
+  clip-path: polygon(0 15%, 82% 14%, 100% 36%, 92% 78%, 12% 82%, 0 62%);
+}
+
+.weapon-preview__shape-slot--receiver::before,
+.weapon-preview__shape-slot--handguard::before,
+.weapon-preview__shape-slot--laser::before,
+.weapon-preview__shape-slot--tactical::before,
+.weapon-preview__shape-slot--opticMount::before,
+.weapon-preview__shape-slot--underbarrelAdapter::before,
+.weapon-preview__shape-slot--sideRailAdapter::before {
+  position: absolute;
+  content: "";
+}
+
+.weapon-preview__shape-slot--handguard {
+  inset-block: 21% 24%;
+  border-radius: 4px;
+  clip-path: polygon(0 26%, 8% 6%, 100% 10%, 96% 78%, 5% 86%);
+}
+
+.weapon-preview__shape-slot--handguard::before {
+  inset: 19% 8%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 10px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent);
+}
+
+.weapon-preview__shape-slot--barrel {
+  inset-block: 38%;
+  inset-inline: 2% 4%;
+}
+
+.weapon-preview__shape-slot--muzzle {
+  inset-block: 27%;
+  inset-inline: 8%;
+  border-radius: 999px;
+}
+
+.weapon-preview__shape-slot--muzzle::after {
+  right: 5%;
+  width: 16%;
+  background: rgba(5, 8, 8, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.weapon-preview__shape-slot--stock {
+  inset: 4% 4% 8% 1%;
+  border-radius: 5px 10px 11px 5px;
+  clip-path: polygon(0 43%, 14% 26%, 58% 8%, 100% 27%, 95% 73%, 58% 88%, 14% 72%, 0 59%);
+}
+
+.weapon-preview__shape-slot--pistolGrip {
+  inset-inline: 14% 16%;
+  inset-block: 5% 0;
+  border-radius: 3px 3px 8px 9px;
+  clip-path: polygon(8% 0, 100% 0, 84% 100%, 7% 100%, 0 24%);
+}
+
+.weapon-preview__shape-slot--foregrip {
+  inset-inline: 24%;
+  inset-block: 4% 4%;
+  border-radius: 5px 5px 9px 9px;
+  clip-path: polygon(8% 0, 92% 0, 82% 100%, 20% 100%);
+}
+
+.weapon-preview__shape-slot--magazine {
+  inset-inline: 14% 13%;
+  inset-block: 2% 1%;
+  border-radius: 4px 4px 10px 11px;
+  clip-path: polygon(9% 0, 100% 0, 87% 90%, 69% 100%, 5% 100%, 0 20%);
+}
+
+.weapon-preview__shape-slot--opticMount,
+.weapon-preview__shape-slot--underbarrelAdapter,
+.weapon-preview__shape-slot--sideRailAdapter {
+  inset-block: 35%;
+  border-radius: 2px;
+}
+
+.weapon-preview__shape-slot--opticMount::before,
+.weapon-preview__shape-slot--underbarrelAdapter::before,
+.weapon-preview__shape-slot--sideRailAdapter::before {
+  inset: -32% 8% auto;
+  height: 42%;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.36) 0 5px, transparent 5px 9px);
+}
+
+.weapon-preview__shape-slot--optic {
+  inset-block: 12% 20%;
+  border-radius: 6px;
+  clip-path: polygon(4% 24%, 18% 6%, 78% 6%, 96% 27%, 92% 75%, 76% 91%, 20% 91%, 6% 72%);
+}
+
+.weapon-preview__shape-slot--optic::after {
+  top: 31%;
+  right: 12%;
+  left: 12%;
+  height: 22%;
+  background:
+    radial-gradient(circle at 24% 50%, rgba(233, 255, 207, 0.34), transparent 22%),
+    rgba(156, 190, 161, 0.14);
+}
+
+.weapon-preview__shape-slot--laser {
+  inset-block: 12% 18%;
+  border-radius: 4px 8px 7px 4px;
+  clip-path: polygon(0 15%, 82% 15%, 100% 38%, 86% 82%, 0 82%);
+}
+
+.weapon-preview__shape-slot--laser::before {
+  top: 35%;
+  right: 7%;
+  width: 12%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(196, 242, 120, 0.42);
+  box-shadow: 0 0 8px rgba(196, 242, 120, 0.14);
+}
+
+.weapon-preview__shape-slot--tactical {
+  inset-block: 25%;
+  inset-inline: 6%;
+}
+
+.weapon-preview__shape-slot--tactical::before {
+  inset: auto;
+  top: 25%;
+  right: 7%;
+  width: 18%;
+  height: 50%;
+  border-radius: 999px;
+  background: rgba(230, 237, 209, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.weapon-preview__missing-art-label {
+  position: absolute;
+  right: 3%;
+  bottom: calc(100% - 2px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  padding: 2px 5px;
+  border: 1px solid rgba(210, 181, 101, 0.34);
+  border-radius: 3px;
+  background: rgba(7, 10, 9, 0.82);
+  color: rgba(240, 221, 157, 0.82);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: rotate(calc(var(--anchor-rotation) * -1)) translateY(2px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.weapon-preview__stage:hover .weapon-preview__missing-art-label,
+.weapon-preview__layer.is-active .weapon-preview__missing-art-label {
+  opacity: 0.72;
+  transform: rotate(calc(var(--anchor-rotation) * -1)) translateY(0);
+}
+
+.weapon-preview__layer.is-active .weapon-preview__missing-art-label {
+  border-color: rgba(199, 243, 108, 0.42);
+  color: #f4ffe5;
+  opacity: 1;
+}
+
 .weapon-preview__anchor {
   z-index: calc(var(--anchor-layer) + 14);
   border: 0;
@@ -499,26 +699,26 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 10px;
-  height: 10px;
-  border: 1px solid rgba(223, 245, 174, 0.72);
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(223, 245, 174, 0.44);
   border-radius: 999px;
   background: rgba(5, 8, 7, 0.9);
-  box-shadow: 0 0 0 4px rgba(199, 243, 108, 0.08), 0 0 14px rgba(199, 243, 108, 0.2);
+  box-shadow: 0 0 0 3px rgba(182, 220, 112, 0.04), 0 0 10px rgba(182, 220, 112, 0.1);
   transform: translate(-50%, -50%);
 }
 
 .weapon-preview__anchor.is-installed .weapon-preview__anchor-pin {
-  border-color: rgba(199, 243, 108, 0.86);
-  background: var(--preview-accent);
-  box-shadow: 0 0 0 4px rgba(199, 243, 108, 0.12), 0 0 17px rgba(199, 243, 108, 0.34);
+  border-color: rgba(182, 220, 112, 0.78);
+  background: #b5c674;
+  box-shadow: 0 0 0 3px rgba(182, 220, 112, 0.07), 0 0 12px rgba(182, 220, 112, 0.18);
 }
 
 .weapon-preview__anchor.is-active .weapon-preview__anchor-pin {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   border-color: #fbffe9;
-  box-shadow: 0 0 0 6px rgba(199, 243, 108, 0.18), 0 0 26px rgba(199, 243, 108, 0.52);
+  box-shadow: 0 0 0 5px rgba(214, 185, 90, 0.14), 0 0 18px rgba(214, 185, 90, 0.32);
 }
 
 .weapon-preview__anchor-label,
@@ -528,10 +728,10 @@
   display: inline-flex;
   align-items: center;
   max-width: 130px;
-  min-height: 20px;
-  padding: 3px 7px;
-  border: 1px solid rgba(220, 238, 180, 0.16);
-  background: rgba(6, 10, 9, 0.9);
+  min-height: 18px;
+  padding: 2px 6px;
+  border: 1px solid rgba(220, 238, 180, 0.12);
+  background: rgba(6, 10, 9, 0.78);
   line-height: 1.1;
   text-transform: uppercase;
   transform: translateX(-50%) rotate(calc(var(--anchor-rotation) * -1));
@@ -539,17 +739,17 @@
 }
 
 .weapon-preview__anchor-label {
-  bottom: calc(100% + 5px);
+  bottom: calc(100% + 4px);
   color: #eaf5c8;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
 }
 
 .weapon-preview__anchor-name {
-  top: calc(100% + 5px);
+  top: calc(100% + 4px);
   overflow: hidden;
   color: rgba(237, 243, 223, 0.72);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   text-overflow: ellipsis;
 }
@@ -561,20 +761,20 @@
 
 .weapon-preview__anchor.is-active .weapon-preview__anchor-label,
 .weapon-preview__anchor.is-active .weapon-preview__anchor-name {
-  border-color: rgba(199, 243, 108, 0.5);
+  border-color: rgba(182, 220, 112, 0.42);
   color: #f4ffe5;
-  box-shadow: 0 0 20px rgba(199, 243, 108, 0.14);
+  box-shadow: 0 0 16px rgba(182, 220, 112, 0.1);
 }
 
 .weapon-preview__meta {
   display: grid;
   grid-template-columns: minmax(86px, auto) minmax(0, 1fr) minmax(80px, auto);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid rgba(220, 238, 180, 0.13);
-  border-radius: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(220, 238, 180, 0.1);
+  border-radius: 4px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
     var(--preview-shell);
@@ -591,7 +791,7 @@
 .weapon-preview__meta span,
 .weapon-preview__meta em {
   color: rgba(237, 243, 223, 0.64);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -599,7 +799,7 @@
 
 .weapon-preview__meta strong {
   color: #f1f7e7;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .weapon-preview__meta em {

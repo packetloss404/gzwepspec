@@ -66,7 +66,7 @@ export function decodeBuildShare(value: string): DecodedBuildShare {
   }
 }
 
-export function createShareUrl(baseUrl: string, platform: WeaponPlatform, selections: BuildSelections, paramName = "build") {
+export function createShareUrl(baseUrl: string, platform: WeaponPlatform, selections: BuildSelections, paramName = "build"): string {
   const url = new URL(baseUrl);
   url.searchParams.set(paramName, encodeBuildShare(platform, selections));
   return url.toString();
@@ -80,25 +80,32 @@ export function readBuildShareFromUrl(url: string, paramName = "build"): Decoded
   }
 }
 
-function readBuildParam(value: string) {
+function readBuildParam(value: string): string {
   try {
-    const params = new URLSearchParams(value);
-    const fromParams = params.get("build");
-    if (fromParams?.startsWith(sharePrefix)) {
-      return fromParams.slice(sharePrefix.length);
+    if (/^https?:\/\//i.test(value)) {
+      const url = new URL(value);
+      const fromSearch = url.searchParams.get("build");
+      const fromHash = url.hash ? readBuildParam(url.hash.replace(/^#/, "")) : null;
+      return stripSharePrefix(fromSearch) ?? fromHash ?? value;
     }
 
-    return fromParams ?? value;
+    const params = new URLSearchParams(value);
+    const fromParams = params.get("build");
+    return stripSharePrefix(fromParams) ?? fromParams ?? value;
   } catch {
     return value;
   }
 }
 
-function toBase64Url(value: string) {
+function stripSharePrefix(value: string | null): string | null {
+  return value?.startsWith(sharePrefix) ? value.slice(sharePrefix.length) : null;
+}
+
+function toBase64Url(value: string): string {
   return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function fromBase64Url(value: string) {
+function fromBase64Url(value: string): string {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   return atob(padded);
 }

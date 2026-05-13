@@ -5,6 +5,10 @@ import ts from "typescript";
 
 const root = process.cwd();
 const supportedImageExtensions = new Set([".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"]);
+const supportedLocalMimeTypes = new Map([
+  [".png", "image/png"],
+  [".webp", "image/webp"],
+]);
 
 function toPosixPath(value) {
   return value.split(path.sep).join("/");
@@ -73,6 +77,34 @@ function addDuplicateWarnings(values, label, warnings) {
   }
 }
 
+function detectLocalImageMimeType(filePath) {
+  const header = fs.readFileSync(filePath).subarray(0, 12);
+
+  if (
+    header.length >= 8 &&
+    header[0] === 0x89 &&
+    header[1] === 0x50 &&
+    header[2] === 0x4e &&
+    header[3] === 0x47 &&
+    header[4] === 0x0d &&
+    header[5] === 0x0a &&
+    header[6] === 0x1a &&
+    header[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  if (
+    header.length >= 12 &&
+    header.toString("ascii", 0, 4) === "RIFF" &&
+    header.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+
+  return undefined;
+}
+
 const errors = [];
 const warnings = [];
 
@@ -101,12 +133,25 @@ for (const asset of localAssets) {
   const absoluteLocalPath = path.join(root, asset.localPath);
   manifestLocalPaths.add(toPosixPath(asset.localPath));
 
-  if (!fs.existsSync(absoluteLocalPath)) {
+  const localFileExists = fs.existsSync(absoluteLocalPath);
+  if (!localFileExists) {
     errors.push(`${asset.category}:${asset.id} points to missing file: ${asset.localPath}`);
   }
 
-  if (path.extname(asset.localPath).toLowerCase() !== ".png" || asset.mimeType !== "image/png") {
-    warnings.push(`${asset.category}:${asset.id} declares ${asset.mimeType} at ${asset.localPath}; expected PNG for current local assets.`);
+  const expectedMimeType = supportedLocalMimeTypes.get(path.extname(asset.localPath).toLowerCase());
+  if (!expectedMimeType) {
+    warnings.push(`${asset.category}:${asset.id} uses ${asset.localPath}; expected a PNG or WebP local render.`);
+  } else if (asset.mimeType !== expectedMimeType) {
+    warnings.push(`${asset.category}:${asset.id} declares ${asset.mimeType} at ${asset.localPath}; expected ${expectedMimeType}.`);
+  } else if (localFileExists) {
+    const detectedMimeType = detectLocalImageMimeType(absoluteLocalPath);
+    if (detectedMimeType !== asset.mimeType) {
+      errors.push(
+        `${asset.category}:${asset.id} declares ${asset.mimeType} at ${asset.localPath}; file header ${
+          detectedMimeType ? `looks like ${detectedMimeType}` : "is not a supported PNG/WebP image"
+        }.`,
+      );
+    }
   }
 }
 

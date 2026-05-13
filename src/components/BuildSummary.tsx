@@ -16,7 +16,7 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
   const selectedParts = getSelectedParts(selections);
   const stats = totalStats(platform, selections);
   const vendors = summarizeVendors(platform, selectedParts, priceCatalog);
-  const price = summarizePrice(selectedParts, priceCatalog);
+  const price = summarizePrice(selectedParts, priceCatalog, platform);
   const slots = summarizeSlots(platform, selections);
   const deltas = statKeys.map((key) => ({ key, delta: stats[key] - platform.baseStats[key] }));
   const primaryWin = [...deltas].sort((a, b) => statScore(b.key, b.delta) - statScore(a.key, a.delta))[0];
@@ -47,9 +47,9 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
           <dd>{selectedParts.length}</dd>
         </div>
         <div>
-          <dt>Priced parts</dt>
+          <dt>Priced items</dt>
           <dd>
-            {price.knownCount}/{selectedParts.length}
+            {price.knownCount}/{selectedParts.length + 1}
           </dd>
         </div>
       </dl>
@@ -73,7 +73,7 @@ export function BuildSummary({ platform, selections, priceCatalog = {}, currency
         {vendors.map((vendor) => (
           <div key={vendor.name}>
             <span>{vendor.name}</span>
-            <strong>{vendor.knownPriceCount ? formatCurrency(vendor.price, currency) : `${vendor.partCount} part${vendor.partCount === 1 ? "" : "s"}`}</strong>
+            <strong>{vendor.knownPriceCount ? formatCurrency(vendor.price, currency) : formatItemCount(vendor.itemCount)}</strong>
           </div>
         ))}
       </div>
@@ -136,25 +136,35 @@ function isImproved(statKey: StatKey, delta: number) {
 }
 
 function summarizeVendors(platform: WeaponPlatform, selectedParts: Part[], priceCatalog: PriceCatalog) {
-  const vendorMap = new Map<string, { name: string; partCount: number; price: number; knownPriceCount: number }>();
-  vendorMap.set(platform.vendor, { name: platform.vendor, partCount: 0, price: 0, knownPriceCount: 0 });
+  const vendorMap = new Map<string, { name: string; itemCount: number; price: number; knownPriceCount: number }>();
+  const platformVendor = formatVendorUnlock(platform.vendor, platform.unlock);
+  const platformPrice = itemPrice(platform, priceCatalog);
+  vendorMap.set(platformVendor, {
+    name: platformVendor,
+    itemCount: 1,
+    price: platformPrice ?? 0,
+    knownPriceCount: platformPrice === undefined ? 0 : 1,
+  });
 
   for (const part of selectedParts) {
-    const current = vendorMap.get(part.vendor) ?? { name: part.vendor, partCount: 0, price: 0, knownPriceCount: 0 };
-    const price = priceCatalog[part.id];
-    current.partCount += 1;
+    const vendor = formatVendorUnlock(part.vendor, part.unlock);
+    const current = vendorMap.get(vendor) ?? { name: vendor, itemCount: 0, price: 0, knownPriceCount: 0 };
+    const price = itemPrice(part, priceCatalog);
+    current.itemCount += 1;
     current.price += price ?? 0;
     current.knownPriceCount += price === undefined ? 0 : 1;
-    vendorMap.set(part.vendor, current);
+    vendorMap.set(vendor, current);
   }
 
-  return Array.from(vendorMap.values()).sort((a, b) => b.partCount - a.partCount || a.name.localeCompare(b.name));
+  return Array.from(vendorMap.values()).sort((a, b) => b.itemCount - a.itemCount || a.name.localeCompare(b.name));
 }
 
-function summarizePrice(selectedParts: Part[], priceCatalog: PriceCatalog) {
-  return selectedParts.reduce(
+function summarizePrice(selectedParts: Part[], priceCatalog: PriceCatalog, platform?: WeaponPlatform) {
+  const items = platform ? [platform, ...selectedParts] : selectedParts;
+
+  return items.reduce(
     (summary, part) => {
-      const price = priceCatalog[part.id];
+      const price = itemPrice(part, priceCatalog);
       return {
         total: summary.total + (price ?? 0),
         knownCount: summary.knownCount + (price === undefined ? 0 : 1),
@@ -162,6 +172,22 @@ function summarizePrice(selectedParts: Part[], priceCatalog: PriceCatalog) {
     },
     { total: 0, knownCount: 0 },
   );
+}
+
+function itemPrice(item: Part | WeaponPlatform, priceCatalog: PriceCatalog): number | undefined {
+  return item.price?.amount ?? priceCatalog[item.id];
+}
+
+function formatVendorUnlock(vendor: string, unlock?: { vendor: string; level: number }) {
+  if (unlock) {
+    return `${unlock.vendor} LL${unlock.level}`;
+  }
+
+  return vendor;
+}
+
+function formatItemCount(count: number) {
+  return `${count} item${count === 1 ? "" : "s"}`;
 }
 
 function formatStat(value: number, statKey: StatKey) {

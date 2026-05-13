@@ -34,6 +34,8 @@ Official Gray Zone Warfare Steam media is referenced remotely through `assetMani
 
 Remote media still needs attribution. Source provenance confirms where the URL came from; it does not grant permission to redistribute the media. Steam media should not be copied into `public/assets/` without a deliberate manifest update and a source/terms review.
 
+Do not use Steam store media as WepSpec branding. It may identify the game context and link users to the store page, but the surrounding copy must keep WepSpec's unofficial status clear.
+
 ## Attribution Requirements
 
 Each asset attribution must capture:
@@ -46,6 +48,8 @@ Each asset attribution must capture:
 
 For Fandom-derived renders, the project note should say that Fandom pages may include CC-BY-SA community content, but embedded game artwork or screenshots may have separate rights. Gray Zone Warfare game artwork remains owned by MADFINGER Games.
 
+Do not extract or distribute packaged Gray Zone Warfare game files. If an image cannot be tied to a public source and a documented rights decision, use a procedural placeholder or original project-created art instead.
+
 ## Validation
 
 Run:
@@ -56,9 +60,11 @@ npm run verify
 
 `npm run verify` runs the asset validator and tests. The asset validator fails for incomplete local entries and missing files. It warns for coverage gaps and unmanifested public image files. Warnings are allowed for v1 because the catalog intentionally has broader part coverage than reviewed local art.
 
+Preview-specific QA lives in [Art Pipeline](art-pipeline.md). Keep visual profile tests updated with any slot, platform, or anchor model changes.
+
 ## Known Limitations
 
-- Local renders are prototype UI copies, not an authoritative official asset pack.
+- Local renders are prototype UI copies, not an authoritative official asset pack, and not permission to redistribute the underlying game artwork.
 - Several catalog parts use procedural preview fallbacks because reviewed item art is unavailable.
 - Some local part renders are representative or shared across related parts.
 - Remote Steam URLs may change because they are external store media links.
